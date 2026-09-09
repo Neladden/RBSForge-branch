@@ -335,6 +335,60 @@
     color:var(--ink-faint); margin:16px 0 10px; padding-top:12px; border-top:1px dashed var(--border);
   }
 
+  /* locked inputs read clearly as inert, not just faded */
+  .params-body input:disabled{
+    opacity:.5; cursor:not-allowed;
+  }
+  .params-body input[type="range"]:disabled::-webkit-slider-thumb{cursor:not-allowed;}
+  .params-body input[type="range"]:disabled::-moz-range-thumb{cursor:not-allowed;}
+
+  /* --- params panel: collapsible header + condensed chip summary --- */
+  .params-panel{padding-bottom:14px;}
+  .panel-toggle{
+    width:100%; display:flex; align-items:center; justify-content:space-between;
+    background:none; border:none; padding:0; margin:0 0 10px; cursor:pointer; color:var(--ink);
+    font:inherit;
+  }
+  .panel-toggle .chevron{color:var(--ink-faint); transition:transform .15s ease; flex:0 0 auto;}
+  .panel-toggle[aria-expanded="true"] .chevron{transform:rotate(180deg);}
+
+  .params-condensed{display:flex; flex-wrap:wrap; gap:6px;}
+  .param-chip{
+    display:inline-flex; align-items:baseline; gap:5px;
+    background:var(--surface-2); border:1px solid var(--border); border-radius:6px;
+    padding:4px 8px; font-size:11px;
+  }
+  .param-chip .k{color:var(--ink-faint); font-family:"IBM Plex Mono",monospace; letter-spacing:.02em;}
+  .param-chip .v{color:var(--ink); font-family:"IBM Plex Mono",monospace;}
+
+  .params-body{margin-top:14px; padding-top:14px; border-top:1px solid var(--border);}
+  .lock-bar{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  .lock-status{font-size:11.5px; color:var(--ink-muted); line-height:1.5;}
+  .lock-status strong{color:var(--ink);}
+  .customize-btn{
+    flex:0 0 auto; font-size:11.5px; font-family:"IBM Plex Mono",monospace;
+    background:var(--surface-2); border:1px solid var(--border-strong); color:var(--ink);
+    border-radius:6px; padding:5px 10px; cursor:pointer;
+  }
+  .customize-btn:hover{border-color:var(--accent);}
+
+  .confirm-row{
+    margin-top:10px; padding:10px 11px; border-radius:8px;
+    background:var(--warn-soft); border:1px solid var(--warn);
+  }
+  .confirm-row p{margin:0 0 8px; font-size:11.5px; color:var(--ink); line-height:1.5;}
+  .confirm-buttons{display:flex; gap:8px;}
+  .confirm-buttons button{
+    font-size:11.5px; border-radius:6px; padding:5px 10px; cursor:pointer; font-family:"IBM Plex Sans",sans-serif;
+  }
+  #confirmYes{background:var(--warn); border:1px solid var(--warn); color:var(--surface);}
+  #confirmNo{background:transparent; border:1px solid var(--border-strong); color:var(--ink);}
+
+  .revert-link{
+    margin-top:14px; font-size:11.5px; background:none; border:none; color:var(--bad);
+    cursor:pointer; padding:0; text-decoration:underline; text-underline-offset:2px;
+  }
+
   /* --- results --- */
   .results{display:flex; flex-direction:column; gap:20px; min-width:0;}
 
@@ -443,11 +497,6 @@
       </div>
     </div>
 
-    <div class="panel" id="customPanel" hidden>
-      <div class="panel-title">Custom organism parameters</div>
-      <div id="customFields"></div>
-    </div>
-
     <div class="panel">
       <div class="panel-title">Temperature<span id="calBadgeSlot"></span></div>
       <div class="temp-readout">
@@ -466,6 +515,87 @@
       </div>
       <button class="reset-link" id="resetTemp" type="button">Reset to this host's growth temperature</button>
       <div class="caveat" id="betaCaveat"></div>
+    </div>
+
+    <div class="panel params-panel">
+      <button type="button" class="panel-toggle" id="paramsToggle" aria-expanded="false" aria-controls="paramsBody">
+        <span class="panel-title" style="margin:0;">Organism parameters</span>
+        <svg class="chevron" id="paramsChevron" width="11" height="11" viewBox="0 0 10 10" aria-hidden="true">
+          <path d="M1 3 L5 7 L9 3" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="params-condensed" id="paramsCondensed"></div>
+
+      <div class="params-body" id="paramsBody" hidden>
+        <div class="lock-bar">
+          <span class="lock-status" id="lockStatus"></span>
+          <button type="button" class="customize-btn" id="lockToggleBtn"></button>
+        </div>
+        <div class="confirm-row" id="confirmRow" hidden>
+          <p id="confirmText"></p>
+          <div class="confirm-buttons">
+            <button type="button" id="confirmYes">Yes, unlock for editing</button>
+            <button type="button" id="confirmNo">Cancel</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="customAsd">Anti-SD tail (16S rRNA 3' end)</label>
+          <input type="text" id="customAsd" class="mono" spellcheck="false" disabled>
+          <div class="field-hint" id="customAsdHint"></div>
+        </div>
+
+        <div class="slider-field">
+          <div class="head">
+            <label for="customSOpt">Optimal aligned spacing</label>
+            <span class="readout"><input type="number" id="customSOptNum" min="0" max="16" step="1" disabled><span class="unit">nt</span></span>
+          </div>
+          <input type="range" class="neutral" id="customSOpt" min="0" max="16" step="1" disabled>
+        </div>
+
+        <div class="slider-field">
+          <div class="head">
+            <label for="customBeta">β (free energy → rate)</label>
+            <span class="readout"><input type="number" id="customBetaNum" min="0.10" max="0.90" step="0.01" disabled><span class="unit">mol/kcal</span></span>
+          </div>
+          <input type="range" class="neutral" id="customBeta" min="0.10" max="0.90" step="0.01" disabled>
+        </div>
+
+        <div class="slider-field">
+          <div class="head">
+            <label for="customTgrowth">Reference growth temperature</label>
+            <span class="readout"><input type="number" id="customTgrowthNum" min="4" max="100" step="1" disabled><span class="unit">°C</span></span>
+          </div>
+          <input type="range" class="neutral" id="customTgrowth" min="4" max="100" step="1" disabled>
+          <div class="field-hint">Used by "reset to growth temperature" and the calibration badge — not the current experiment temperature above.</div>
+        </div>
+
+        <div class="custom-subhead">Start codon energies (ΔG, kcal/mol)</div>
+
+        <div class="slider-field">
+          <div class="head"><label for="customAUG">AUG</label>
+            <span class="readout"><input type="number" id="customAUGNum" min="-3" max="2" step="0.01" disabled></span>
+          </div>
+          <input type="range" class="neutral" id="customAUG" min="-3" max="2" step="0.01" disabled>
+        </div>
+        <div class="slider-field">
+          <div class="head"><label for="customGUG">GUG</label>
+            <span class="readout"><input type="number" id="customGUGNum" min="-3" max="2" step="0.01" disabled></span>
+          </div>
+          <input type="range" class="neutral" id="customGUG" min="-3" max="2" step="0.01" disabled>
+        </div>
+        <div class="slider-field">
+          <div class="head"><label for="customUUG">UUG</label>
+            <span class="readout"><input type="number" id="customUUGNum" min="-3" max="2" step="0.01" disabled></span>
+          </div>
+          <input type="range" class="neutral" id="customUUG" min="-3" max="2" step="0.01" disabled>
+        </div>
+
+        <div class="caveat">Spacing-curve shape and standby-site coefficients stay the host's original value here — refitting those needs a real calibration library (see docs/MODEL.md), not a slider.</div>
+
+        <button type="button" class="revert-link" id="revertBtn" hidden>Discard custom values, use published data</button>
+      </div>
     </div>
   </div>
 
@@ -919,38 +1049,70 @@ const state = {
   temperatureC: HOSTPACKS.ecoli.tGrowthC,
   selectedIndex: null, // index into current results.results (by start-codon `index`)
   searchLabel: null, // cosmetic-only: the typed name a "generic" fallback stands in for
-  customHostpack: null, // user-editable HostPack, live only while species === "generic"
+  customHostpack: null, // user-edited HostPack override; exists only after a real edit
+  customOrigin: null, // name of the real HostPack the custom values were cloned from
+  paramsExpanded: false, // organism-parameters panel: collapsed/condensed vs. expanded
+  paramsUnlocked: false, // can the expanded sliders currently be dragged/typed into
+  confirmPending: false, // the inline "are you sure" row is showing
 };
 
-// The Generic/uncharacterized profile is the one HostPack the console lets
-// you actually edit -- a sandbox for "what if this uncharacterized
-// organism's parameters were X", not a claim about any real species.
-// Editing never mutates HOSTPACKS.generic itself (each edit session gets
-// its own deep-ish clone), and only the parameters the model documentation
-// treats as legitimately organism-specific are exposed (anti-SD tail,
-// optimal spacing, beta, growth temperature, and the start codons this
-// console actually scans for). Spacing-curve shape and standby-site
-// coefficients are deliberately left un-editable -- the model's own docs
-// say those need real calibration data, not a casual slider.
-function freshCustomHostpack() {
-  const base = HOSTPACKS.generic;
+// Every HostPack's parameters are always visible (in the condensed chips,
+// and as real sliders once expanded), for every species -- not just
+// Generic/uncharacterized. They start locked and read-only, because they
+// are either a published value (for a calibrated/prior host) or a
+// documented placeholder (for an uncharacterized one), not something to
+// bump by accident. "Customize..." requires an explicit confirmation
+// before anything becomes editable; the moment a value actually changes,
+// the active profile detaches into a Generic/uncharacterized copy (edits
+// never mutate a HOSTPACKS entry in place) and the species selector
+// follows along. Only the parameters the model documentation treats as
+// legitimately organism-specific are exposed (anti-SD tail, optimal
+// spacing, beta, growth temperature, and the start codons this console
+// actually scans for) -- spacing-curve shape and standby-site
+// coefficients stay fixed, since the model's own docs say those need real
+// calibration data, not a slider.
+function cloneHostpack(hp) {
   return {
-    ...base,
-    spacingPush: [...base.spacingPush],
-    spacingPull: [...base.spacingPull],
-    standby: { ...base.standby },
-    startCodonDg: { ...base.startCodonDg },
+    ...hp,
+    key: "generic",
+    name: "Generic / uncharacterized",
+    spacingPush: [...hp.spacingPush],
+    spacingPull: [...hp.spacingPull],
+    standby: { ...hp.standby },
+    startCodonDg: { ...hp.startCodonDg },
     calibration: "prior",
     uncertainty: "high",
-    notes: "Custom parameters -- edit the fields below. Everything not exposed here stays the documented E. coli prior.",
+    notes: hp.key === "generic"
+      ? "Custom parameters -- edit the fields below. Everything not exposed here stays the documented E. coli prior."
+      : `Custom parameters, derived from ${hp.name}. Everything not exposed here stays that host's original value.`,
   };
 }
 function getActiveHostpack() {
-  if (state.species === "generic") {
-    if (!state.customHostpack) state.customHostpack = freshCustomHostpack();
-    return state.customHostpack;
-  }
+  if (state.species === "generic" && state.customHostpack) return state.customHostpack;
   return HOSTPACKS[state.species];
+}
+// Applies one edit from the (always-visible, unlock-gated) parameter
+// controls: on the *first* edit of a session, clones whichever HostPack is
+// currently active (named or generic) into state.customHostpack and, if
+// that wasn't already generic, switches the active species to it.
+// Subsequent edits just mutate the same clone.
+function applyCustomEdit(mutatorFn) {
+  if (!state.customHostpack) {
+    const origin = getActiveHostpack();
+    state.customOrigin = origin.key === "generic" ? null : origin.name;
+    state.customHostpack = cloneHostpack(origin);
+  }
+  mutatorFn(state.customHostpack);
+  if (state.species !== "generic") {
+    state.species = "generic";
+    el.speciesSelect.value = "generic";
+  }
+  state.searchLabel = null;
+  renderSpeciesSummary();
+  updateGrowthTick();
+  updateCaveat();
+  syncParamsPanel();
+  scheduleRecompute();
 }
 
 const el = {
@@ -962,8 +1124,19 @@ const el = {
   speciesSummary: document.getElementById("speciesSummary"),
   speciesSearch: document.getElementById("speciesSearch"),
   searchResults: document.getElementById("searchResults"),
-  customPanel: document.getElementById("customPanel"),
-  customFields: document.getElementById("customFields"),
+  paramsToggle: document.getElementById("paramsToggle"),
+  paramsChevron: document.getElementById("paramsChevron"),
+  paramsCondensed: document.getElementById("paramsCondensed"),
+  paramsBody: document.getElementById("paramsBody"),
+  lockStatus: document.getElementById("lockStatus"),
+  lockToggleBtn: document.getElementById("lockToggleBtn"),
+  confirmRow: document.getElementById("confirmRow"),
+  confirmText: document.getElementById("confirmText"),
+  confirmYes: document.getElementById("confirmYes"),
+  confirmNo: document.getElementById("confirmNo"),
+  revertBtn: document.getElementById("revertBtn"),
+  customAsd: document.getElementById("customAsd"),
+  customAsdHint: document.getElementById("customAsdHint"),
   tempSlider: document.getElementById("tempSlider"),
   tempInput: document.getElementById("tempInput"),
   tempKelvin: document.getElementById("tempKelvin"),
@@ -1016,9 +1189,10 @@ function populateSpeciesSelect() {
 function renderSpeciesSummary() {
   const hp = getActiveHostpack();
   const status = calibrationStatus(hp, state.temperatureC);
-  const labelNote = state.searchLabel
-    ? `<div class="notes">Standing in for “${state.searchLabel}” — not a real profile for that organism, see below.</div>`
-    : "";
+  // hp.notes already states "derived from X" for a customized profile
+  // (see cloneHostpack) -- only the search-fallback note is added here.
+  const notes = [];
+  if (state.searchLabel) notes.push(`Standing in for “${state.searchLabel}” — not a real profile for that organism.`);
   el.speciesSummary.innerHTML = `
     <div class="row1"><span class="sci-name">${hp.name}</span></div>
     <div class="row2">
@@ -1026,13 +1200,16 @@ function renderSpeciesSummary() {
       <span class="badge ${status}">${status}</span>
     </div>
     <div class="notes">${hp.notes}</div>
-    ${labelNote}`;
+    ${notes.map((n) => `<div class="notes">${n}</div>`).join("")}`;
 }
 
 function selectSpecies(key, opts) {
   opts = opts || {};
   state.species = key;
   state.searchLabel = opts.label || null;
+  if (opts.resetCustom) { state.customHostpack = null; state.customOrigin = null; }
+  state.paramsUnlocked = false;
+  state.confirmPending = false;
   el.speciesSelect.value = key;
   if (opts.matchTemperature !== false) {
     state.temperatureC = getActiveHostpack().tGrowthC;
@@ -1041,7 +1218,7 @@ function selectSpecies(key, opts) {
   updateGrowthTick();
   updateTempReadout();
   updateCaveat();
-  renderCustomPanel();
+  syncParamsPanel();
   clearSearch();
   recompute();
 }
@@ -1073,101 +1250,157 @@ function runSpeciesSearch() {
         <button type="button" id="useGenericBtn">Use the Generic/uncharacterized prior for now, labeled “${typed}”</button>
       </div>`;
     document.getElementById("useGenericBtn").addEventListener("click", () => {
-      selectSpecies("generic", { label: typed });
+      selectSpecies("generic", { label: typed, resetCustom: true });
     });
   }
 }
 
-/* ---- custom-organism editable fields (Generic profile only) ---- */
-function sliderFieldHTML(id, label, value, min, max, step, unit) {
-  return `
-    <div class="slider-field">
-      <div class="head">
-        <label for="${id}">${label}</label>
-        <span class="readout"><input type="number" id="${id}Num" min="${min}" max="${max}" step="${step}" value="${value}"><span class="unit">${unit}</span></span>
-      </div>
-      <input type="range" class="neutral" id="${id}" min="${min}" max="${max}" step="${step}" value="${value}">
-    </div>`;
+/* ---- organism-parameters panel: collapsed chips + locked/unlockable sliders ---- */
+const PARAM_INPUT_IDS = [
+  "customAsd",
+  "customSOpt", "customSOptNum",
+  "customBeta", "customBetaNum",
+  "customTgrowth", "customTgrowthNum",
+  "customAUG", "customAUGNum",
+  "customGUG", "customGUGNum",
+  "customUUG", "customUUGNum",
+];
+
+function describeAsd(seq) {
+  return seq.length < 4
+    ? "Enter at least 4 nt -- with none, no candidate can find an SD match (every start reports leaderless)."
+    : `${seq.length} nt, normalized to RNA: ${seq}`;
+}
+
+function renderCondensedChips(hp) {
+  const chip = (k, v) => `<span class="param-chip"><span class="k">${k}</span><span class="v">${v}</span></span>`;
+  el.paramsCondensed.innerHTML = [
+    chip("aSD", hp.asd || "(none)"),
+    chip("s_opt", hp.sOpt + " nt"),
+    chip("β", hp.beta.toFixed(2)),
+    chip("T_growth", hp.tGrowthC.toFixed(0) + "°C"),
+    chip("AUG", hp.startCodonDg.AUG.toFixed(2)),
+    chip("GUG", hp.startCodonDg.GUG.toFixed(2)),
+    chip("UUG", hp.startCodonDg.UUG.toFixed(2)),
+  ].join("");
+}
+
+function setSliderDisplay(baseId, value, digits) {
+  const rangeEl = document.getElementById(baseId);
+  const numEl = document.getElementById(baseId + "Num");
+  rangeEl.value = value;
+  numEl.value = digits ? value.toFixed(digits) : value;
+  const min = parseFloat(rangeEl.min), max = parseFloat(rangeEl.max);
+  rangeEl.style.setProperty("--fill", ((value - min) / (max - min)) * 100 + "%");
+}
+
+function updateFieldValues(hp) {
+  el.customAsd.value = hp.asd;
+  el.customAsdHint.textContent = describeAsd(hp.asd);
+  setSliderDisplay("customSOpt", hp.sOpt, 0);
+  setSliderDisplay("customBeta", hp.beta, 2);
+  setSliderDisplay("customTgrowth", hp.tGrowthC, 0);
+  setSliderDisplay("customAUG", hp.startCodonDg.AUG, 3);
+  setSliderDisplay("customGUG", hp.startCodonDg.GUG, 3);
+  setSliderDisplay("customUUG", hp.startCodonDg.UUG, 3);
+}
+
+function applyLockState() {
+  const locked = !state.paramsUnlocked;
+  PARAM_INPUT_IDS.forEach((id) => { document.getElementById(id).disabled = locked; });
+}
+
+function updateLockBar(hp) {
+  if (state.paramsUnlocked) {
+    el.lockStatus.innerHTML = `🔓 <strong>Unlocked</strong> — editing ${state.customOrigin ? "a copy derived from " + state.customOrigin : hp.name}. Changes apply live.`;
+    el.lockToggleBtn.textContent = "Lock";
+    el.lockToggleBtn.onclick = () => { state.paramsUnlocked = false; syncParamsPanel(); };
+  } else if (state.customHostpack) {
+    el.lockStatus.innerHTML = `🔒 Locked — showing your <strong>custom values</strong>${state.customOrigin ? " (derived from " + state.customOrigin + ")" : ""}.`;
+    el.lockToggleBtn.textContent = "Customize…";
+    el.lockToggleBtn.onclick = openConfirm;
+  } else {
+    el.lockStatus.innerHTML = `🔒 Locked — showing <strong>${hp.name}</strong>'s published values.`;
+    el.lockToggleBtn.textContent = "Customize…";
+    el.lockToggleBtn.onclick = openConfirm;
+  }
+  el.lockToggleBtn.hidden = state.confirmPending;
+  el.confirmRow.hidden = !state.confirmPending;
+}
+
+function openConfirm() {
+  const hp = getActiveHostpack();
+  state.confirmPending = true;
+  el.confirmText.textContent = `Editing will detach these numbers from ${hp.name}'s data and switch the active profile to Generic/uncharacterized. Continue?`;
+  el.lockToggleBtn.hidden = true;
+  el.confirmRow.hidden = false;
+}
+
+function syncParamsPanel() {
+  const hp = getActiveHostpack();
+  renderCondensedChips(hp);
+  updateFieldValues(hp);
+  applyLockState();
+  updateLockBar(hp);
+  el.revertBtn.hidden = !state.customHostpack;
 }
 
 function bindSliderField(baseId, opts) {
   const rangeEl = document.getElementById(baseId);
   const numEl = document.getElementById(baseId + "Num");
   const digits = opts.digits || 0;
-  function applyFill() {
-    const pct = ((parseFloat(rangeEl.value) - opts.min) / (opts.max - opts.min)) * 100;
-    rangeEl.style.setProperty("--fill", pct + "%");
-  }
-  function sync(value) {
+  function commit(value) {
     if (Number.isNaN(value)) return;
     const clamped = Math.min(opts.max, Math.max(opts.min, value));
     const rounded = digits ? parseFloat(clamped.toFixed(digits)) : Math.round(clamped);
-    rangeEl.value = rounded;
-    numEl.value = rounded;
-    applyFill();
-    opts.onChange(rounded);
-    scheduleRecompute();
+    applyCustomEdit((hp) => opts.set(hp, rounded));
   }
-  rangeEl.addEventListener("input", () => sync(parseFloat(rangeEl.value)));
-  numEl.addEventListener("change", () => sync(parseFloat(numEl.value)));
+  rangeEl.addEventListener("input", () => commit(parseFloat(rangeEl.value)));
+  numEl.addEventListener("change", () => commit(parseFloat(numEl.value)));
   numEl.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") { sync(parseFloat(numEl.value)); numEl.blur(); }
-  });
-  applyFill();
-}
-
-function wireAsdField(hp) {
-  const input = document.getElementById("customAsd");
-  const hint = document.getElementById("customAsdHint");
-  function describe(seq) {
-    return seq.length < 4
-      ? "Enter at least 4 nt -- with none, no candidate can find an SD match (every start reports leaderless)."
-      : `${seq.length} nt, normalized to RNA: ${seq}`;
-  }
-  // Initial hint reads the HostPack's own current value directly, rather
-  // than round-tripping through input.value -- correct regardless of
-  // whether the browser has finished reflecting the `value` attribute
-  // into the property yet.
-  hint.textContent = describe(hp.asd);
-  input.addEventListener("input", () => {
-    const clean = sanitizeRNA(input.value);
-    hint.textContent = describe(clean);
-    hp.asd = clean;
-    scheduleRecompute();
+    if (e.key === "Enter") { commit(parseFloat(numEl.value)); numEl.blur(); }
   });
 }
 
-function renderCustomPanel() {
-  const isGeneric = state.species === "generic";
-  el.customPanel.hidden = !isGeneric;
-  if (!isGeneric) return;
-  const hp = getActiveHostpack();
-  el.customFields.innerHTML = `
-    <div class="field">
-      <label for="customAsd">Anti-SD tail (16S rRNA 3' end)</label>
-      <input type="text" id="customAsd" class="mono" spellcheck="false" value="${hp.asd}">
-      <div class="field-hint" id="customAsdHint"></div>
-    </div>
-    ${sliderFieldHTML("customSOpt", "Optimal aligned spacing", hp.sOpt, 0, 16, 1, "nt")}
-    ${sliderFieldHTML("customBeta", "β (free energy → rate)", hp.beta, 0.10, 0.90, 0.01, "mol/kcal")}
-    ${sliderFieldHTML("customTgrowth", "Reference growth temperature", hp.tGrowthC, TEMP_MIN, TEMP_MAX, 1, "°C")}
-    <div class="custom-subhead">Start codon energies (ΔG, kcal/mol)</div>
-    ${sliderFieldHTML("customAUG", "AUG", hp.startCodonDg.AUG, -3, 2, 0.01, "")}
-    ${sliderFieldHTML("customGUG", "GUG", hp.startCodonDg.GUG, -3, 2, 0.01, "")}
-    ${sliderFieldHTML("customUUG", "UUG", hp.startCodonDg.UUG, -3, 2, 0.01, "")}
-    <div class="caveat">Spacing-curve shape and standby-site coefficients stay the documented <em>E. coli</em> prior here — refitting those needs a real calibration library (see docs/MODEL.md), not a slider.</div>`;
-
-  wireAsdField(hp);
-  bindSliderField("customSOpt", { min: 0, max: 16, onChange: (v) => { hp.sOpt = v; } });
-  bindSliderField("customBeta", { min: 0.10, max: 0.90, digits: 2, onChange: (v) => { hp.beta = v; } });
-  bindSliderField("customTgrowth", {
-    min: TEMP_MIN, max: TEMP_MAX,
-    onChange: (v) => { hp.tGrowthC = v; updateGrowthTick(); },
+function wireAsdField() {
+  el.customAsd.addEventListener("input", () => {
+    const clean = sanitizeRNA(el.customAsd.value);
+    applyCustomEdit((hp) => { hp.asd = clean; });
   });
-  bindSliderField("customAUG", { min: -3, max: 2, digits: 3, onChange: (v) => { hp.startCodonDg.AUG = v; } });
-  bindSliderField("customGUG", { min: -3, max: 2, digits: 3, onChange: (v) => { hp.startCodonDg.GUG = v; } });
-  bindSliderField("customUUG", { min: -3, max: 2, digits: 3, onChange: (v) => { hp.startCodonDg.UUG = v; } });
 }
+
+el.paramsToggle.addEventListener("click", () => {
+  state.paramsExpanded = !state.paramsExpanded;
+  el.paramsBody.hidden = !state.paramsExpanded;
+  el.paramsToggle.setAttribute("aria-expanded", String(state.paramsExpanded));
+});
+el.confirmYes.addEventListener("click", () => {
+  state.confirmPending = false;
+  state.paramsUnlocked = true;
+  syncParamsPanel();
+});
+el.confirmNo.addEventListener("click", () => {
+  state.confirmPending = false;
+  syncParamsPanel();
+});
+el.revertBtn.addEventListener("click", () => {
+  state.customHostpack = null;
+  state.customOrigin = null;
+  state.paramsUnlocked = false;
+  renderSpeciesSummary();
+  updateGrowthTick();
+  updateCaveat();
+  syncParamsPanel();
+  scheduleRecompute();
+});
+
+wireAsdField();
+bindSliderField("customSOpt", { min: 0, max: 16, set: (hp, v) => { hp.sOpt = v; } });
+bindSliderField("customBeta", { min: 0.10, max: 0.90, digits: 2, set: (hp, v) => { hp.beta = v; } });
+bindSliderField("customTgrowth", { min: TEMP_MIN, max: TEMP_MAX, set: (hp, v) => { hp.tGrowthC = v; } });
+bindSliderField("customAUG", { min: -3, max: 2, digits: 3, set: (hp, v) => { hp.startCodonDg.AUG = v; } });
+bindSliderField("customGUG", { min: -3, max: 2, digits: 3, set: (hp, v) => { hp.startCodonDg.GUG = v; } });
+bindSliderField("customUUG", { min: -3, max: 2, digits: 3, set: (hp, v) => { hp.startCodonDg.UUG = v; } });
 
 /* ---- temperature rail ---- */
 function calibrationStatus(hp, tempC) {
@@ -1441,7 +1674,7 @@ el.speciesSearch.addEventListener("keydown", (e) => {
 
 populateSpeciesSelect();
 renderSpeciesSummary();
-renderCustomPanel();
+syncParamsPanel();
 updateGrowthTick();
 updateTempReadout();
 updateCaveat();
