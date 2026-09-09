@@ -19,6 +19,8 @@
     --good-soft:#E1F0E6;
     --bad:#B14B3F;
     --bad-soft:#F6E4E1;
+    --warn:#9C6B12;
+    --warn-soft:#F3E6C9;
     --focus:#0F7A78;
     --shadow: 0 1px 2px rgba(28,37,48,0.06), 0 8px 24px -12px rgba(28,37,48,0.18);
   }
@@ -41,6 +43,8 @@
       --good-soft:#1C3128;
       --bad:#E08C80;
       --bad-soft:#3A241F;
+      --warn:#D9A648;
+      --warn-soft:#3A2E16;
       --focus:#4FC7C2;
       --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.6);
     }
@@ -63,6 +67,8 @@
     --good-soft:#1C3128;
     --bad:#E08C80;
     --bad-soft:#3A241F;
+    --warn:#D9A648;
+    --warn-soft:#3A2E16;
     --focus:#4FC7C2;
     --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.6);
   }
@@ -161,42 +167,96 @@
     text-decoration:underline; text-underline-offset:2px;
   }
 
-  .species-list{display:flex; flex-direction:column; gap:6px;}
-  .species-card{
-    display:flex; flex-direction:column; gap:3px;
-    text-align:left;
+  select#speciesSelect{
+    width:100%;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:7px;
+    padding:9px 32px 9px 11px;
+    font-family:"IBM Plex Sans", sans-serif;
+    font-size:13.5px;
+    color:var(--ink);
+    cursor:pointer;
+    appearance:none;
+    -webkit-appearance:none;
+    -moz-appearance:none;
+    background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: calc(100% - 17px) center, calc(100% - 12px) center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat:no-repeat;
+  }
+  select#speciesSelect optgroup{font-style:normal; font-weight:600; color:var(--ink-muted);}
+  select#speciesSelect option{color:var(--ink); background:var(--surface);}
+
+  .species-summary{
+    margin-top:10px;
+    display:flex; flex-direction:column; gap:5px;
     border:1px solid var(--border);
     background:var(--surface-2);
     border-radius:8px;
-    padding:9px 11px;
-    cursor:pointer;
-    transition:border-color .12s ease, background .12s ease;
+    padding:10px 11px;
   }
-  .species-card:hover{border-color:var(--border-strong);}
-  .species-card.active{
-    border-color:var(--accent);
-    background:var(--accent-soft);
+  .species-summary .row1{display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
+  .species-summary .sci-name{font-style:italic; font-family:"Newsreader", serif; font-size:15px;}
+  .species-summary .row2{display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .species-summary .meta{font-size:11px; color:var(--ink-muted); font-family:"IBM Plex Mono", monospace;}
+  .species-summary .notes{font-size:11px; color:var(--ink-faint); line-height:1.5; margin-top:2px;}
+
+  .species-search{margin-top:12px; padding-top:12px; border-top:1px dashed var(--border);}
+  .species-search label{display:block; font-size:11px; color:var(--ink-faint); margin-bottom:5px;}
+  .species-search input{
+    width:100%;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:7px;
+    padding:7px 10px;
+    font-size:12.5px;
+    color:var(--ink);
   }
-  .species-card .row1{display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
-  .species-card .sci-name{font-style:italic; font-family:"Newsreader", serif; font-size:14.5px;}
-  .species-card .row2{display:flex; justify-content:space-between; align-items:center; gap:8px;}
-  .species-card .meta{font-size:11px; color:var(--ink-muted); font-family:"IBM Plex Mono", monospace;}
+  .search-results{display:flex; flex-direction:column; gap:4px; margin-top:6px;}
+  .search-hit{
+    text-align:left; font-size:12px;
+    background:var(--surface); border:1px solid var(--border); border-radius:6px;
+    padding:6px 9px; cursor:pointer; color:var(--ink);
+  }
+  .search-hit:hover{border-color:var(--accent);}
+  .search-hit .sci-name{font-style:italic; font-family:"Newsreader", serif;}
+  .search-empty{
+    font-size:11.5px; color:var(--ink-muted); line-height:1.5; margin-top:6px;
+  }
+  .search-empty button{
+    margin-top:6px; display:inline-block;
+    font-size:11.5px; color:var(--accent); background:none; border:none; padding:0; cursor:pointer;
+    text-decoration:underline; text-underline-offset:2px;
+  }
   .badge{
     font-family:"IBM Plex Mono", monospace;
     font-size:9.5px; letter-spacing:.04em; text-transform:uppercase;
     padding:2px 6px; border-radius:100px; white-space:nowrap;
   }
   .badge.calibrated{background:var(--good-soft); color:var(--good);}
-  .badge.prior{background:var(--bad-soft); color:var(--bad);}
+  .badge.prior{background:var(--warn-soft); color:var(--warn);}
+  .badge.speculative{background:var(--bad-soft); color:var(--bad);}
 
   .temp-readout{
     display:flex; align-items:baseline; gap:8px; margin-bottom:10px;
   }
-  .temp-readout .value{font-family:"Newsreader", serif; font-size:34px; font-weight:500; font-variant-numeric:tabular-nums;}
+  input#tempInput{
+    font-family:"Newsreader", serif; font-size:34px; font-weight:500;
+    font-variant-numeric:tabular-nums;
+    width:2.4ch; border:none; background:transparent; color:var(--ink);
+    padding:0; -moz-appearance:textfield;
+  }
+  input#tempInput::-webkit-outer-spin-button,
+  input#tempInput::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+  input#tempInput:focus-visible{outline:2px solid var(--focus); outline-offset:3px; border-radius:3px;}
   .temp-readout .unit{font-size:15px; color:var(--ink-muted);}
   .temp-readout .kelvin{font-size:11.5px; color:var(--ink-faint); margin-left:auto; font-family:"IBM Plex Mono",monospace;}
 
-  .slider-wrap{position:relative; padding:6px 2px 0;}
+  /* Thumb is 18px (9px radius); every position below is computed as
+     calc(9px + (100% - 18px) * pct) so ticks/labels/markers land exactly
+     under where the thumb travels, not the track's raw box edges. */
+  .slider-wrap{position:relative; padding:6px 0 0;}
   input[type="range"]{
     -webkit-appearance:none; appearance:none;
     width:100%; height:8px; border-radius:100px;
@@ -217,10 +277,17 @@
     border:2.5px solid var(--ink);
     cursor:pointer;
   }
-  .slider-scale{display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-faint); margin-top:3px; font-family:"IBM Plex Mono",monospace;}
+  .slider-scale{position:relative; height:14px; margin-top:5px;}
+  .scale-mark{
+    position:absolute; top:0;
+    font-size:10.5px; color:var(--ink-faint); font-family:"IBM Plex Mono",monospace;
+  }
+  #scaleMin{left:calc(9px + (100% - 18px) * 0); transform:translateX(0);}
+  #scaleMid{left:calc(9px + (100% - 18px) * 0.5); transform:translateX(-50%);}
+  #scaleMax{left:calc(9px + (100% - 18px) * 1); transform:translateX(-100%);}
   .growth-tick{
     position:absolute; top:6px; width:2px; height:8px; background:var(--ink);
-    opacity:.55; pointer-events:none; transform:translateX(-1px);
+    opacity:.6; pointer-events:none; transform:translateX(-50%);
   }
   .reset-link{
     margin-top:10px; font-size:11.5px; background:none; border:none; color:var(--accent);
@@ -331,21 +398,32 @@
 
     <div class="panel">
       <div class="panel-title">Host organism</div>
-      <div class="species-list" id="speciesList"></div>
+      <select id="speciesSelect"></select>
+      <div class="species-summary" id="speciesSummary"></div>
+
+      <div class="species-search">
+        <label for="speciesSearch">Organism not on the list?</label>
+        <input type="text" id="speciesSearch" placeholder="Search, e.g. “Vibrio” or “yeast”" autocomplete="off">
+        <div class="search-results" id="searchResults"></div>
+      </div>
     </div>
 
     <div class="panel">
       <div class="panel-title">Temperature<span id="calBadgeSlot"></span></div>
       <div class="temp-readout">
-        <span class="value tnum" id="tempValue">37</span>
+        <input type="number" id="tempInput" class="tnum" min="4" max="100" step="0.5" value="37">
         <span class="unit">°C</span>
         <span class="kelvin tnum" id="tempKelvin">310.15 K</span>
       </div>
       <div class="slider-wrap">
         <input type="range" id="tempSlider" min="4" max="100" step="0.5" value="37">
         <div class="growth-tick" id="growthTick"></div>
+        <div class="slider-scale">
+          <span class="scale-mark" id="scaleMin">4°C</span>
+          <span class="scale-mark" id="scaleMid">52°C</span>
+          <span class="scale-mark" id="scaleMax">100°C</span>
+        </div>
       </div>
-      <div class="slider-scale"><span>4°C</span><span>52°C</span><span>100°C</span></div>
       <button class="reset-link" id="resetTemp" type="button">Reset to this host's growth temperature</button>
       <div class="caveat" id="betaCaveat"></div>
     </div>
@@ -661,48 +739,75 @@ const DEFAULT_STANDBY = { c1: 0.038, c2: -1.629, c3: 17.359, cSlide: 0.20, hCap:
 const HOSTPACKS = {
   ecoli: {
     key: "ecoli", name: "Escherichia coli K-12", phylogeny: "Gammaproteobacteria",
-    gramStain: "negative", tGrowthC: 37.0, asd: "ACCUCCUUA", sOpt: 5,
+    category: "mesophile", gramStain: "negative", tGrowthC: 37.0, asd: "ACCUCCUUA", sOpt: 5,
     spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
     standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
     cutoffPost: 35, cutoffPre: null,
-    calibration: "calibrated",
+    calibration: "calibrated", uncertainty: "low",
     notes: "Reference organism -- every coefficient is the published, fitted v1.0/v2.0 value.",
   },
   b_subtilis: {
     key: "b_subtilis", name: "Bacillus subtilis", phylogeny: "Firmicutes (Bacilli)",
-    gramStain: "positive", tGrowthC: 37.0, asd: "GAUCACCUCCUUUCU", sOpt: 8,
+    category: "mesophile", gramStain: "positive", tGrowthC: 37.0, asd: "GAUCACCUCCUUUCU", sOpt: 8,
     spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
     standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
     cutoffPost: 35, cutoffPre: null,
-    calibration: "prior",
+    calibration: "prior", uncertainty: "low",
     notes: "aSD tail is RNA-seq mapped (real); beta/spacing curvature/standby are the E. coli prior, not refit for this species.",
+  },
+  pseudomonas_putida: {
+    key: "pseudomonas_putida", name: "Pseudomonas putida", phylogeny: "Gammaproteobacteria",
+    category: "mesophile", gramStain: "negative", tGrowthC: 30.0, asd: "ACCUCCUUA", sOpt: 5,
+    spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
+    standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
+    cutoffPost: 35, cutoffPre: null,
+    calibration: "prior", uncertainty: "low",
+    notes: "Popular GC-rich Gammaproteobacterial chassis. aSD tail is presumed identical to E. coli's (16S rRNA 3' termini are highly conserved across Gammaproteobacteria) but not independently confirmed for this species. Growth temperature (30C) is real; beta/spacing/standby are the E. coli prior.",
   },
   geobacillus: {
     key: "geobacillus", name: "Geobacillus / Parageobacillus thermoglucosidasius",
-    phylogeny: "Firmicutes (Bacilli), thermophile", gramStain: "positive", tGrowthC: 60.0,
+    phylogeny: "Firmicutes (Bacilli), thermophile", category: "thermophile", gramStain: "positive", tGrowthC: 60.0,
     asd: "GAUCACCUCCUUUCU", sOpt: 8,
     spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
     standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
     cutoffPost: 35, cutoffPre: null,
-    calibration: "prior",
+    calibration: "prior", uncertainty: "medium",
     notes: "aSD borrowed from B. subtilis (unconfirmed for this genus). All non-temperature coefficients are the E. coli prior.",
+  },
+  clostridium_thermocellum: {
+    key: "clostridium_thermocellum", name: "Clostridium thermocellum", phylogeny: "Firmicutes, thermophile",
+    category: "thermophile", gramStain: "positive", tGrowthC: 60.0, asd: "GAUCACCUCCUUUCU", sOpt: 8,
+    spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
+    standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
+    cutoffPost: 35, cutoffPre: null,
+    calibration: "prior", uncertainty: "medium",
+    notes: "AT-richer genome than Thermus or Geobacillus; native SD usage is strong, but AT-rich SD:aSD duplexes that look strong at 37C can melt substantially by its ~60C growth temperature -- the van 't Hoff temperature scaling matters more here than for a GC-richer host. aSD borrowed from B. subtilis (unconfirmed for this genus).",
   },
   thermus: {
     key: "thermus", name: "Thermus thermophilus", phylogeny: "Deinococcus-Thermus, thermophile",
-    gramStain: "negative", tGrowthC: 70.0, asd: "ACCUCCUUA", sOpt: 5,
+    category: "thermophile", gramStain: "negative", tGrowthC: 70.0, asd: "ACCUCCUUA", sOpt: 5,
     spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
     standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
     cutoffPost: 35, cutoffPre: null,
-    calibration: "prior",
-    notes: "Highest-uncertainty profile: unconfirmed aSD, unmodeled 3'-terminal pseudouridines (Psi1540/Psi1541), E. coli-prior spacing/standby despite a documented different 30S platform.",
+    calibration: "prior", uncertainty: "high",
+    notes: "Unconfirmed aSD, unmodeled 3'-terminal pseudouridines (Psi1540/Psi1541), E. coli-prior spacing/standby despite a documented different 30S platform (no S21).",
+  },
+  thermotoga_maritima: {
+    key: "thermotoga_maritima", name: "Thermotoga maritima", phylogeny: "Thermotogae, deep-branching hyperthermophile",
+    category: "thermophile", gramStain: "negative", tGrowthC: 80.0, asd: "ACCUCCUUA", sOpt: 5,
+    spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
+    standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
+    cutoffPost: 35, cutoffPre: null,
+    calibration: "prior", uncertainty: "high",
+    notes: "Highest-temperature, highest-uncertainty built-in profile. Everything but the growth temperature (80C) is an unconfirmed E. coli-derived placeholder, and at this temperature the model's own neglect of nearest-neighbor heat-capacity (deltaCp) effects becomes a real source of error (reported 1-3 kcal/mol per short helix by 75-100C) -- treat outputs here as illustrative of the model's limits, not as predictions.",
   },
   generic: {
     key: "generic", name: "Generic / uncharacterized", phylogeny: "unknown",
-    gramStain: "unknown", tGrowthC: 37.0, asd: "ACCUCCUUA", sOpt: 5,
+    category: "mesophile", gramStain: "unknown", tGrowthC: 37.0, asd: "ACCUCCUUA", sOpt: 5,
     spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
     standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
     cutoffPost: 35, cutoffPre: null,
-    calibration: "prior",
+    calibration: "prior", uncertainty: "high",
     notes: "E. coli prior throughout. Replace the aSD tail at minimum before drawing conclusions.",
   },
 };
@@ -773,6 +878,7 @@ const state = {
   species: "ecoli",
   temperatureC: HOSTPACKS.ecoli.tGrowthC,
   selectedIndex: null, // index into current results.results (by start-codon `index`)
+  searchLabel: null, // cosmetic-only: the typed name a "generic" fallback stands in for
 };
 
 const el = {
@@ -780,11 +886,17 @@ const el = {
   seqLen: document.getElementById("seqLen"),
   seqWarn: document.getElementById("seqWarn"),
   exampleBtn: document.getElementById("exampleBtn"),
-  speciesList: document.getElementById("speciesList"),
+  speciesSelect: document.getElementById("speciesSelect"),
+  speciesSummary: document.getElementById("speciesSummary"),
+  speciesSearch: document.getElementById("speciesSearch"),
+  searchResults: document.getElementById("searchResults"),
   tempSlider: document.getElementById("tempSlider"),
-  tempValue: document.getElementById("tempValue"),
+  tempInput: document.getElementById("tempInput"),
   tempKelvin: document.getElementById("tempKelvin"),
   growthTick: document.getElementById("growthTick"),
+  scaleMin: document.getElementById("scaleMin"),
+  scaleMid: document.getElementById("scaleMid"),
+  scaleMax: document.getElementById("scaleMax"),
   resetTemp: document.getElementById("resetTemp"),
   betaCaveat: document.getElementById("betaCaveat"),
   calBadgeSlot: document.getElementById("calBadgeSlot"),
@@ -792,6 +904,10 @@ const el = {
   detailMount: document.getElementById("detailMount"),
   leaderlessMount: document.getElementById("leaderlessMount"),
 };
+const TEMP_MIN = parseFloat(el.tempSlider.min), TEMP_MAX = parseFloat(el.tempSlider.max);
+el.scaleMin.textContent = `${TEMP_MIN}°C`;
+el.scaleMid.textContent = `${((TEMP_MIN + TEMP_MAX) / 2).toFixed(0)}°C`;
+el.scaleMax.textContent = `${TEMP_MAX}°C`;
 
 function fmtSigned(n, digits) {
   digits = digits === undefined ? 2 : digits;
@@ -804,55 +920,125 @@ function fmtRate(r) {
   return r.toFixed(2);
 }
 
-/* ---- species rail ---- */
-function renderSpeciesList() {
-  el.speciesList.innerHTML = "";
+/* ---- species: dropdown + summary + search ---- */
+const CATEGORY_LABEL = { mesophile: "Mesophiles", thermophile: "Thermophiles" };
+
+function populateSpeciesSelect() {
+  const byCategory = {};
   Object.values(HOSTPACKS).forEach((hp) => {
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = "species-card" + (hp.key === state.species ? " active" : "");
-    card.innerHTML = `
-      <div class="row1">
-        <span class="sci-name">${hp.name}</span>
-      </div>
-      <div class="row2">
-        <span class="meta">${hp.gramStain} · T<sub>growth</sub> ${hp.tGrowthC.toFixed(0)}°C · s<sub>opt</sub> ${hp.sOpt} nt</span>
-        <span class="badge ${hp.calibration === "calibrated" ? "calibrated" : "prior"}">${hp.calibration === "calibrated" ? "calibrated" : "prior"}</span>
-      </div>`;
-    card.addEventListener("click", () => {
-      state.species = hp.key;
-      renderSpeciesList();
-      updateGrowthTick();
-      updateCaveat();
-      recompute();
-    });
-    el.speciesList.appendChild(card);
+    (byCategory[hp.category] = byCategory[hp.category] || []).push(hp);
   });
+  el.speciesSelect.innerHTML = Object.keys(byCategory)
+    .map((cat) => {
+      const opts = byCategory[cat]
+        .map((hp) => `<option value="${hp.key}">${hp.name}</option>`)
+        .join("");
+      return `<optgroup label="${CATEGORY_LABEL[cat] || cat}">${opts}</optgroup>`;
+    })
+    .join("");
+  el.speciesSelect.value = state.species;
+}
+
+function renderSpeciesSummary() {
+  const hp = HOSTPACKS[state.species];
+  const status = calibrationStatus(hp, state.temperatureC);
+  const labelNote = state.searchLabel
+    ? `<div class="notes">Standing in for “${state.searchLabel}” — not a real profile for that organism, see below.</div>`
+    : "";
+  el.speciesSummary.innerHTML = `
+    <div class="row1"><span class="sci-name">${hp.name}</span></div>
+    <div class="row2">
+      <span class="meta">${hp.gramStain} · T<sub>growth</sub> ${hp.tGrowthC.toFixed(0)}°C · s<sub>opt</sub> ${hp.sOpt} nt</span>
+      <span class="badge ${status}">${status}</span>
+    </div>
+    <div class="notes">${hp.notes}</div>
+    ${labelNote}`;
+}
+
+function selectSpecies(key, opts) {
+  opts = opts || {};
+  state.species = key;
+  state.searchLabel = opts.label || null;
+  el.speciesSelect.value = key;
+  if (opts.matchTemperature !== false) {
+    state.temperatureC = HOSTPACKS[key].tGrowthC;
+    el.tempSlider.value = state.temperatureC;
+  }
+  updateGrowthTick();
+  updateTempReadout();
+  updateCaveat();
+  clearSearch();
+  recompute();
+}
+
+function clearSearch() {
+  el.speciesSearch.value = "";
+  el.searchResults.innerHTML = "";
+}
+
+function runSpeciesSearch() {
+  const q = el.speciesSearch.value.trim().toLowerCase();
+  if (!q) { el.searchResults.innerHTML = ""; return; }
+  const hits = Object.values(HOSTPACKS).filter(
+    (hp) => hp.key !== "generic" && (hp.name.toLowerCase().includes(q) || hp.phylogeny.toLowerCase().includes(q))
+  );
+  if (hits.length) {
+    el.searchResults.innerHTML = hits
+      .map((hp) => `<button type="button" class="search-hit" data-key="${hp.key}"><span class="sci-name">${hp.name}</span></button>`)
+      .join("");
+    el.searchResults.querySelectorAll(".search-hit").forEach((btn) => {
+      btn.addEventListener("click", () => selectSpecies(btn.dataset.key));
+    });
+  } else {
+    const typed = el.speciesSearch.value.trim();
+    el.searchResults.innerHTML = `
+      <div class="search-empty">
+        No built-in profile for “${typed}”. Nothing here is fabricated to fill the gap —
+        see <span class="mono">docs/MODEL.md</span> for how to build a real HostPack (16S rRNA anti-SD tail, growth temperature, Gram stain) once you have the data.
+        <button type="button" id="useGenericBtn">Use the Generic/uncharacterized prior for now, labeled “${typed}”</button>
+      </div>`;
+    document.getElementById("useGenericBtn").addEventListener("click", () => {
+      selectSpecies("generic", { label: typed });
+    });
+  }
 }
 
 /* ---- temperature rail ---- */
+function calibrationStatus(hp, tempC) {
+  const nearFit = Math.abs(tempC - 37) <= 3;
+  if (hp.calibration === "calibrated" && nearFit) return "calibrated";
+  const highTemp = tempC > 75 || (hp.uncertainty === "high" && tempC > 55);
+  if (highTemp) return "speculative";
+  return "prior";
+}
 function updateGrowthTick() {
   const hp = HOSTPACKS[state.species];
-  const min = parseFloat(el.tempSlider.min), max = parseFloat(el.tempSlider.max);
-  const pct = (hp.tGrowthC - min) / (max - min);
-  el.growthTick.style.left = `calc(${pct * 100}% )`;
+  const pct = (hp.tGrowthC - TEMP_MIN) / (TEMP_MAX - TEMP_MIN);
+  el.growthTick.style.left = `calc(9px + (100% - 18px) * ${pct})`;
 }
 function updateTempReadout() {
-  el.tempValue.textContent = state.temperatureC.toFixed(1).replace(/\.0$/, "");
+  const rounded = Math.round(state.temperatureC * 10) / 10;
+  el.tempInput.value = rounded;
   el.tempKelvin.textContent = (state.temperatureC + 273.15).toFixed(2) + " K";
 }
 function updateCaveat() {
   const hp = HOSTPACKS[state.species];
-  el.calBadgeSlot.innerHTML = `<span class="badge ${hp.calibration === "calibrated" ? "calibrated" : "prior"}" style="margin-left:8px;">${hp.calibration === "calibrated" ? "calibrated" : "prior"}</span>`;
+  const status = calibrationStatus(hp, state.temperatureC);
+  const label = status === "calibrated" ? "calibrated" : status === "prior" ? "prior" : "speculative";
+  el.calBadgeSlot.innerHTML = `<span class="badge ${status}" style="margin-left:8px;">${label}</span>`;
+
   const farFromRef = Math.abs(state.temperatureC - 37) > 3;
-  if (hp.calibration === "calibrated" && !farFromRef) {
+  if (status === "calibrated") {
     el.betaCaveat.innerHTML = `<strong>β = ${hp.beta} mol/kcal</strong> is the fitted, published value for this host near 37°C — TIR is on calibrated footing here.`;
   } else {
     const reasons = [];
     if (hp.calibration !== "calibrated") reasons.push("host coefficients (β, spacing curvature, standby) are an unfit <em>E. coli</em> prior");
     if (farFromRef) reasons.push("temperature is far from the 37°C fit point");
-    el.betaCaveat.innerHTML = `<strong>Uncalibrated regime:</strong> ${reasons.join(" and ")}. ΔG terms scale correctly with temperature (van 't Hoff), but treat the resulting TIR as a <em>ranking</em> signal, not an absolute rate.`;
+    if (status === "speculative") reasons.push("the nearest-neighbor model's neglect of heat-capacity effects becomes unreliable this far from 37°C");
+    const heading = status === "speculative" ? "Speculative regime" : "Uncalibrated regime";
+    el.betaCaveat.innerHTML = `<strong>${heading}:</strong> ${reasons.join("; ")}. ΔG terms scale correctly with temperature (van 't Hoff), but treat the resulting TIR as a <em>ranking</em> signal, not an absolute rate.`;
   }
+  renderSpeciesSummary();
 }
 
 /* ---- SD:aSD ladder diagram (inline SVG) ---- */
@@ -1059,22 +1245,36 @@ el.sequence.value = EXAMPLE_SEQUENCE;
 el.exampleBtn.addEventListener("click", () => { el.sequence.value = EXAMPLE_SEQUENCE; recompute(); });
 el.sequence.addEventListener("input", scheduleRecompute);
 
-el.tempSlider.addEventListener("input", () => {
-  state.temperatureC = parseFloat(el.tempSlider.value);
+function setTemperature(value) {
+  if (Number.isNaN(value)) return;
+  const clamped = Math.min(TEMP_MAX, Math.max(TEMP_MIN, value));
+  state.temperatureC = clamped;
+  el.tempSlider.value = clamped;
   updateTempReadout();
   updateCaveat();
   scheduleRecompute();
+}
+
+el.tempSlider.addEventListener("input", () => setTemperature(parseFloat(el.tempSlider.value)));
+el.tempInput.addEventListener("change", () => setTemperature(parseFloat(el.tempInput.value)));
+el.tempInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { setTemperature(parseFloat(el.tempInput.value)); el.tempInput.blur(); }
 });
-el.resetTemp.addEventListener("click", () => {
-  const hp = HOSTPACKS[state.species];
-  state.temperatureC = hp.tGrowthC;
-  el.tempSlider.value = hp.tGrowthC;
-  updateTempReadout();
-  updateCaveat();
-  scheduleRecompute();
+el.resetTemp.addEventListener("click", () => setTemperature(HOSTPACKS[state.species].tGrowthC));
+
+el.speciesSelect.addEventListener("change", () => selectSpecies(el.speciesSelect.value));
+
+let searchDebounce = null;
+el.speciesSearch.addEventListener("input", () => {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(runSpeciesSearch, 120);
+});
+el.speciesSearch.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); runSpeciesSearch(); }
 });
 
-renderSpeciesList();
+populateSpeciesSelect();
+renderSpeciesSummary();
 updateGrowthTick();
 updateTempReadout();
 updateCaveat();
