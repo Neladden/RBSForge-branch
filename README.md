@@ -27,6 +27,16 @@ Command line:
 python -m rbsforge.cli "AGGAGG...ATGAAACGC..." --species ecoli --temperature 37
 ```
 
+## Live demo
+
+`web/rbsforge-console.html` is a self-contained, dependency-free
+in-browser reimplementation of the same model (a direct JS port of
+`rbsforge/`, numerically verified against the Python package) with a live
+UI: type a sequence, pick a host organism, and drag the temperature
+slider to see the six-term ΔG breakdown and the SD:anti-SD alignment
+recompute instantly. Open it directly in any browser — no server, no
+build step.
+
 See `docs/MODEL.md` for the full formula set, citations, and — important —
 the limitations around what's calibrated (E. coli, ~37 C) versus what's a
 documented but unfit prior (every other built-in organism/temperature).
