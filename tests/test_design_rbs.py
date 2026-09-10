@@ -1,10 +1,8 @@
-import math
 import random
 import unittest
 
 from operon.design.design_rbs import (
     DesignResult,
-    IUPAC_ALPHABET,
     TOL_KCAL_MOL,
     _has_start_codon,
     _matches_code,

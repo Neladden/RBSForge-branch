@@ -1,7 +1,6 @@
 import random
 import unittest
 
-from operon.assembly import assemble
 from operon.core import CDS, Operon, OperonHost
 from operon.design import Design, design
 from operon.design.nsga2 import _constrained_dominates, _dominates, _fast_nondominated_sort, _Individual, _mutate_operon
