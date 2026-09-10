@@ -34,6 +34,8 @@ operon/                         everything else in the Operon Calculator
   elongation/                   Module C — TER + synonymous codon recoding
   stability/                    Module D — mRNA stability
   promoter_calculator/          Module E — sigma70 promoter / cryptic-promoter scan
+    docs/MODEL.md                promoter calculator's own free-energy model doc
+    web/promoter-calculator-console.html   live, in-browser demo (self-contained, no build step)
   htisc/                        Module F — highly translated internal start codons
   pauses/                       Module G — ribosomal pause sites
   terminators/                  Module H — intrinsic + rho-dependent terminators
@@ -113,6 +115,10 @@ print(best.tss, best.strand, best.tx_rate, best.dg_total)
 # cryptic promoters relative to a designed/annotated TSS
 cryptic = scan_promoters(assembled_dna, intended_tss=my_tss, tau_tx=1.0)
 ```
+
+Live demo: open `operon/promoter_calculator/web/promoter-calculator-console.html`
+directly in a browser for an interactive version — no server, no build
+step; same design and JS-port approach as the RBSForge console above.
 
 See `operon/promoter_calculator/docs/MODEL.md` for the formula set,
 citations, and calibration notes.

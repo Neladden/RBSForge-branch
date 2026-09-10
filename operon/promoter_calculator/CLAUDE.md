@@ -27,6 +27,16 @@ the reference model's coefficient file technically has room for.
   discriminator-length x spacer-length scan, both-strand handling, and
   the top-level `predict`/`scan_promoters` convenience functions.
 - `types.py` — `PromoterHit`, `PromoterScanResult`.
+- `web/promoter-calculator-console.html` — self-contained, dependency-free
+  in-browser reimplementation of this package (a direct JS port,
+  numerically verified against it: same random/consensus sequences give
+  identical `dG_total`/`Tx_rate` to floating-point noise, across both
+  organisms and both strands — see the file's own model-section comment
+  for the parity-check pattern). Sibling to `rbsforge/web/rbsforge-console.html`,
+  same design system. Opens directly in any browser, no server or build
+  step. **If you change a formula in this package, the console's JS port
+  drifts out of sync silently — there is no shared source between them.**
+  Re-verify the port before merging a model change.
 
 ## Load-bearing constraints
 
