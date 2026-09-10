@@ -1,0 +1,116 @@
+# Operon Calculator — architecture and status
+
+This is the short index. The full design spec every module below
+implements against is `OPERON_CALCULATOR_SPEC.md` in this directory —
+read that for algorithms, citations, and worked examples; this page is
+just the map.
+
+## Why RBSForge is a subset
+
+RBSForge (`rbsforge/`) reimplements the Salis Lab **RBS Calculator**:
+given an assembled mRNA, it predicts the translation initiation rate
+(TIR) of every candidate start codon. That is exactly one box in the
+Operon Calculator's pipeline — the rest of this project is the
+assembler that builds the mRNA RBSForge scores, the coupling model that
+makes CDS-after-CDS TIR not just a mono-cistronic RBSForge call, and the
+independent scanners/recoders (codon optimization, mRNA stability,
+cryptic promoters, terminators, repeats, synthesis constraints) that
+turn "predict a TIR" into "predict and design a whole operon."
+
+## Pipeline
+
+```
+                    +-----------------------------------------+
+                    |           OperonAssembler                |
+                    |  promoter + [RBS_i + CDS_i] + terminator |
+                    +------------------+------------------------+
+                                       | assembled DNA / mRNA
+          +---------------+------------+------------+-----------------+
+          v               v            v            v                 v
+   Translation      mRNAStability   CrypticTX    CrypticTerm     Instability
+   (RBSForge +      (RNase +        (Promoter     (intrinsic +    (repeats,
+    coupling +       ribosome        Calculator    rho + pause)    IS, att, RE,
+    TIR + TER +      protection)     both strands)                 synthesis)
+    HTISC)
+          |               |            |            |                 |
+          +---------------+------------+------------+-----------------+
+                                       |
+                                       v
+                            ObjectiveVector / Scores
+                                       |
+                    Design mode only:  MultiObjectiveSearch
+                    mutates RBS IUPAC windows and synonymous
+                    codon choices, re-assembles, re-scores
+```
+
+Every box is its own function with a closed interface (spec section 25).
+They share a host-organism record (`operon.core.OperonHost`) and a
+sequence coordinate system, and nothing else — swapping one module (e.g.
+a different Promoter Calculator for a non-sigma70 host) never requires
+touching another.
+
+## Module status
+
+| Module | Subpackage | What | Status |
+|---|---|---|---|
+| — | `rbsforge` (sibling package) | TIR engine, Predict mode | **implemented** |
+| — | `operon.core` | shared types: `OperonHost`, `CDS`, `Operon`, `Assembled`, `Junction` | **implemented** |
+| A | `operon.assembly` | operon assembly, intergenic distance `d` | prepared, not implemented |
+| B | `operon.coupling` | translational coupling (Tian & Salis 2015) | prepared, not implemented |
+| C | `operon.elongation` | TER + synonymous codon recoding | prepared, not implemented |
+| D | `operon.stability` | mRNA stability (Cetnar & Salis 2021/2024) | prepared, not implemented |
+| E | `operon.promoter_calculator` | sigma70 promoter / cryptic-promoter scan | **implemented** |
+| F | `operon.htisc` | highly translated internal start codons | prepared, not implemented |
+| G | `operon.pauses` | ribosomal pause sites | prepared, not implemented |
+| H | `operon.terminators` | intrinsic + rho-dependent terminators | prepared, not implemented |
+| I | `operon.repeats` | repeats (>=12 bp), IS/att sites | prepared, not implemented |
+| J | `operon.synthesis` | synthesis complexity, restriction sites | prepared, not implemented |
+| K | — (bookkeeping over other modules) | system-level RNAP/ribosome load | not started |
+| — | `operon.design` | `design_rbs` (inverse RBS) + NSGA-II operon design | prepared, not implemented |
+
+"Prepared" means the subpackage exists with a module docstring citing its
+spec section and source papers, and stub functions with the documented
+signature that raise `NotImplementedError` — real scaffolding, not an
+empty directory, but no algorithm behind it yet.
+
+## Implementation order
+
+The spec (section 20) gives a dependency-ordered build sequence; the
+short version, updated for what's actually done:
+
+1. ~~Assembler + intergenic distance~~ → next up (Module A)
+2. ~~TIR scale freeze + `predict_tir` adapter~~ → already true of `rbsforge`
+3. HTISC (Module F) — cheapest next step; needs no new physics, only wraps `rbsforge.RBSCalculator.predict`
+4. `predict_one` + forced-unpaired + CDS-footprint unfolding — an `rbsforge` change, blocks Module B
+5. Coupling (Module B) — needs step 4 and a Vienna-backed fold
+6. `design_rbs` (inverse RBS design)
+7. Codon recoding + TER (Module C)
+8. Repeat finder (Module I)
+9. RE sites + homopolymer/GC (Module J)
+10. **Promoter Calculator (Module E) — done**
+11. Intrinsic terminator scan (Module H)
+12. Pause / internal-SD scan (Module G)
+13. mRNA stability (Module D)
+14. NSGA-II design search (`operon.design`)
+15. 2024 GBDT stability, rho terminators, IS tables, system load, v2.0 standby
+
+Module E (promoter calculator) was pulled forward out of its spec order
+because it has no dependency on any other unimplemented module — it only
+needs a DNA sequence.
+
+## What not to do
+
+The spec's "known failure modes" (section 24) and "what to copy vs.
+re-fit" (section 23) apply across every module built here. The two that
+matter most while modules are still being filled in:
+
+- Don't put OperonHost-only fields (codon tables, IS motifs, coupling
+  constants) into RBSForge's `HostPack`. Wrap it (`operon.core.OperonHost`
+  does this); don't fork it.
+- Don't copy a paper's fitted constant across a boundary it wasn't fit
+  for: Tian 2015's `C` and `k_P` are on their own RBS-calculator au scale
+  and need re-fitting against RBSForge's `v1_style_rate`; the Promoter
+  Calculator's 343 coefficients, by contrast, are reused as-is here
+  because they're already a from-scratch trained model over raw DNA
+  sequence, not something layered on an au scale that changed underneath
+  them.
