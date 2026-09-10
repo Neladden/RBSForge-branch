@@ -22,6 +22,32 @@ result = predict(mrna_sequence, species="ecoli", temperature_c=37.0)
 `.ranked()` exclude leaderless starts. See `docs/MODEL.md` for the full
 field list.
 
+## Live console
+
+`web/rbsforge-console.html` is a self-contained, dependency-free
+in-browser reimplementation of this package (a direct JS port of
+`rbsforge/`, numerically verified against it — same test sequence gives
+identical `delta_G_total`/TIR, including `v1_style_rate`, across every
+built-in HostPack and temperature) with a live UI: sequence input, an
+organism selector showing which HostPack fields are `calibrated` vs. an
+unfit `prior`, editable-but-locked HostPack parameters gated behind a
+confirm step, and a temperature slider. Opens directly in any browser, no
+server or build step. **If you change a formula in this package, the
+console's JS port drifts out of sync silently — there is no shared
+source between them.** Re-verify the port (see the file's own comments
+for the parity-check pattern) before merging a model change.
+
+## HostPack Decoder
+
+`docs/HOSTPACK_DECODER.md` is a draft design document (not implemented)
+for a network that would predict `HostPack` parameters de novo from a
+genome embedding, instead of by hand curation. Read it before adding a
+new built-in HostPack by hand if the organism in question might be in
+scope for that project instead — it lays out which fields are honestly
+learnable from sequence alone and which need real calibration data, a
+distinction worth checking before hand-curating another `prior`-tier
+guess.
+
 ## Load-bearing constraints — do not change without reading the spec first
 
 - **`beta` is an empirical fit, not `1/RT`.** Only the `ecoli` HostPack at

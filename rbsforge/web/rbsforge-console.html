@@ -1,0 +1,1692 @@
+<title>RBSForge Console</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ground:#EFF3F4;
+    --surface:#FFFFFF;
+    --surface-2:#E4EAEC;
+    --ink:#1C2530;
+    --ink-muted:#5B6874;
+    --ink-faint:#8A96A0;
+    --border:#D2DADD;
+    --border-strong:#B7C2C6;
+    --accent:#0F7A78;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#DCEEED;
+    --cold:#3E7CB1;
+    --hot:#C9722F;
+    --good:#2E8558;
+    --good-soft:#E1F0E6;
+    --bad:#B14B3F;
+    --bad-soft:#F6E4E1;
+    --warn:#9C6B12;
+    --warn-soft:#F3E6C9;
+    --focus:#0F7A78;
+    --shadow: 0 1px 2px rgba(28,37,48,0.06), 0 8px 24px -12px rgba(28,37,48,0.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#12171C;
+      --surface:#1A2128;
+      --surface-2:#212930;
+      --ink:#E7ECEE;
+      --ink-muted:#9AA7B0;
+      --ink-faint:#69747C;
+      --border:#2B343C;
+      --border-strong:#3A4650;
+      --accent:#4FC7C2;
+      --accent-ink:#0C1416;
+      --accent-soft:#1D3230;
+      --cold:#6FA8D8;
+      --hot:#E39A5C;
+      --good:#67BF8B;
+      --good-soft:#1C3128;
+      --bad:#E08C80;
+      --bad-soft:#3A241F;
+      --warn:#D9A648;
+      --warn-soft:#3A2E16;
+      --focus:#4FC7C2;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#12171C;
+    --surface:#1A2128;
+    --surface-2:#212930;
+    --ink:#E7ECEE;
+    --ink-muted:#9AA7B0;
+    --ink-faint:#69747C;
+    --border:#2B343C;
+    --border-strong:#3A4650;
+    --accent:#4FC7C2;
+    --accent-ink:#0C1416;
+    --accent-soft:#1D3230;
+    --cold:#6FA8D8;
+    --hot:#E39A5C;
+    --good:#67BF8B;
+    --good-soft:#1C3128;
+    --bad:#E08C80;
+    --bad-soft:#3A241F;
+    --warn:#D9A648;
+    --warn-soft:#3A2E16;
+    --focus:#4FC7C2;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size:14px;
+    line-height:1.5;
+  }
+  h1,h2,h3{font-family:"Newsreader", Georgia, serif; text-wrap:balance; margin:0;}
+  .mono{font-family:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;}
+  .tnum{font-variant-numeric:tabular-nums;}
+  ::selection{background:var(--accent-soft);}
+  :focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+
+  .app{
+    max-width:1180px;
+    margin:0 auto;
+    padding:28px 24px 56px;
+    display:grid;
+    grid-template-columns:328px 1fr;
+    gap:24px;
+    align-items:start;
+  }
+  @media (max-width:860px){
+    .app{grid-template-columns:1fr;}
+  }
+
+  header.masthead{
+    grid-column:1/-1;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:16px;
+    padding-bottom:18px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:2px;
+  }
+  .brand{display:flex; align-items:baseline; gap:12px;}
+  .brand h1{font-size:26px; font-weight:600; letter-spacing:-0.01em;}
+  .brand .tag{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ink-faint);
+    padding-top:2px;
+  }
+  .masthead .subtitle{
+    font-size:12.5px; color:var(--ink-muted); max-width:360px; text-align:right;
+  }
+
+  /* --- control rail --- */
+  .rail{
+    position:sticky; top:20px;
+    display:flex; flex-direction:column; gap:18px;
+  }
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px;
+    box-shadow:var(--shadow);
+  }
+  .panel > .panel-title{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--ink-faint);
+    margin-bottom:10px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+
+  textarea#sequence{
+    width:100%; min-height:108px; resize:vertical;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:7px;
+    padding:10px 11px;
+    font-family:"IBM Plex Mono", monospace;
+    font-size:13px;
+    line-height:1.55;
+    color:var(--ink);
+    letter-spacing:0.01em;
+  }
+  .seq-meta{
+    display:flex; justify-content:space-between;
+    margin-top:8px; font-size:11.5px; color:var(--ink-muted);
+  }
+  .seq-meta .warn{color:var(--bad);}
+  .example-btn{
+    margin-top:8px;
+    font-size:11.5px;
+    color:var(--accent);
+    background:none; border:none; padding:0; cursor:pointer;
+    text-decoration:underline; text-underline-offset:2px;
+  }
+
+  select#speciesSelect{
+    width:100%;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:7px;
+    padding:9px 32px 9px 11px;
+    font-family:"IBM Plex Sans", sans-serif;
+    font-size:13.5px;
+    color:var(--ink);
+    cursor:pointer;
+    appearance:none;
+    -webkit-appearance:none;
+    -moz-appearance:none;
+    background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: calc(100% - 17px) center, calc(100% - 12px) center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat:no-repeat;
+  }
+  select#speciesSelect optgroup{font-style:normal; font-weight:600; color:var(--ink-muted);}
+  select#speciesSelect option{color:var(--ink); background:var(--surface);}
+
+  .species-summary{
+    margin-top:10px;
+    display:flex; flex-direction:column; gap:5px;
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    border-radius:8px;
+    padding:10px 11px;
+  }
+  .species-summary .row1{display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
+  .species-summary .sci-name{font-style:italic; font-family:"Newsreader", serif; font-size:15px;}
+  .species-summary .row2{display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .species-summary .meta{font-size:11px; color:var(--ink-muted); font-family:"IBM Plex Mono", monospace;}
+  .species-summary .notes{font-size:11px; color:var(--ink-faint); line-height:1.5; margin-top:2px;}
+
+  .species-search{margin-top:12px; padding-top:12px; border-top:1px dashed var(--border);}
+  .species-search label{display:block; font-size:11px; color:var(--ink-faint); margin-bottom:5px;}
+  .species-search input{
+    width:100%;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:7px;
+    padding:7px 10px;
+    font-size:12.5px;
+    color:var(--ink);
+  }
+  .search-results{display:flex; flex-direction:column; gap:4px; margin-top:6px;}
+  .search-hit{
+    text-align:left; font-size:12px;
+    background:var(--surface); border:1px solid var(--border); border-radius:6px;
+    padding:6px 9px; cursor:pointer; color:var(--ink);
+  }
+  .search-hit:hover{border-color:var(--accent);}
+  .search-hit .sci-name{font-style:italic; font-family:"Newsreader", serif;}
+  .search-empty{
+    font-size:11.5px; color:var(--ink-muted); line-height:1.5; margin-top:6px;
+  }
+  .search-empty button{
+    margin-top:6px; display:inline-block;
+    font-size:11.5px; color:var(--accent); background:none; border:none; padding:0; cursor:pointer;
+    text-decoration:underline; text-underline-offset:2px;
+  }
+  .badge{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:9.5px; letter-spacing:.04em; text-transform:uppercase;
+    padding:2px 6px; border-radius:100px; white-space:nowrap;
+  }
+  .badge.calibrated{background:var(--good-soft); color:var(--good);}
+  .badge.prior{background:var(--warn-soft); color:var(--warn);}
+  .badge.speculative{background:var(--bad-soft); color:var(--bad);}
+
+  .temp-readout{
+    display:flex; align-items:baseline; gap:8px; margin-bottom:10px;
+  }
+  input#tempInput{
+    font-family:"Newsreader", serif; font-size:34px; font-weight:500;
+    font-variant-numeric:tabular-nums;
+    width:2.4ch; border:none; background:transparent; color:var(--ink);
+    padding:0; -moz-appearance:textfield;
+  }
+  input#tempInput::-webkit-outer-spin-button,
+  input#tempInput::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+  input#tempInput:focus-visible{outline:2px solid var(--focus); outline-offset:3px; border-radius:3px;}
+  .temp-readout .unit{font-size:15px; color:var(--ink-muted);}
+  .temp-readout .kelvin{font-size:11.5px; color:var(--ink-faint); margin-left:auto; font-family:"IBM Plex Mono",monospace;}
+
+  /* Thumb is 18px (9px radius); every position below is computed as
+     calc(9px + (100% - 18px) * pct) so ticks/labels/markers land exactly
+     under where the thumb travels, not the track's raw box edges. */
+  .slider-wrap{position:relative; padding:6px 0 0;}
+  input[type="range"]{
+    -webkit-appearance:none; appearance:none;
+    width:100%; height:8px; border-radius:100px;
+    background:linear-gradient(90deg, var(--cold), var(--surface-2) 45%, var(--surface-2) 55%, var(--hot));
+    outline:none;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:18px; height:18px; border-radius:50%;
+    background:var(--surface);
+    border:2.5px solid var(--ink);
+    cursor:pointer;
+    box-shadow:0 1px 3px rgba(0,0,0,.25);
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:18px; height:18px; border-radius:50%;
+    background:var(--surface);
+    border:2.5px solid var(--ink);
+    cursor:pointer;
+  }
+  .slider-scale{position:relative; height:14px; margin-top:5px;}
+  .scale-mark{
+    position:absolute; top:0;
+    font-size:10.5px; color:var(--ink-faint); font-family:"IBM Plex Mono",monospace;
+  }
+  #scaleMin{left:calc(9px + (100% - 18px) * 0); transform:translateX(0);}
+  #scaleMid{left:calc(9px + (100% - 18px) * 0.5); transform:translateX(-50%);}
+  #scaleMax{left:calc(9px + (100% - 18px) * 1); transform:translateX(-100%);}
+  .growth-tick{
+    position:absolute; top:6px; width:2px; height:8px; background:var(--ink);
+    opacity:.6; pointer-events:none; transform:translateX(-50%);
+  }
+  .reset-link{
+    margin-top:10px; font-size:11.5px; background:none; border:none; color:var(--accent);
+    cursor:pointer; padding:0; text-decoration:underline; text-underline-offset:2px;
+  }
+
+  .caveat{
+    font-size:11.5px; color:var(--ink-muted); line-height:1.5;
+    border-top:1px dashed var(--border); margin-top:12px; padding-top:10px;
+  }
+  .caveat strong{color:var(--ink);}
+
+  /* --- custom-organism editable fields (Generic profile only) --- */
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block; font-size:10.5px; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--ink-faint); font-family:"IBM Plex Mono",monospace; margin-bottom:5px;
+  }
+  .field input[type="text"]{
+    width:100%; background:var(--surface-2); border:1px solid var(--border); border-radius:6px;
+    padding:7px 9px; font-size:13px; color:var(--ink);
+  }
+  .slider-field{margin-bottom:15px;}
+  .slider-field .head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px; gap:8px;}
+  .slider-field .head label{
+    font-size:10.5px; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--ink-faint); font-family:"IBM Plex Mono",monospace;
+  }
+  .slider-field .head .readout{display:flex; align-items:baseline; gap:4px; flex:0 0 auto;}
+  .slider-field .head input[type="number"]{
+    width:5ch; text-align:right; border:none; background:transparent; color:var(--ink);
+    font-family:"IBM Plex Mono",monospace; font-size:12.5px; font-variant-numeric:tabular-nums;
+    padding:0; -moz-appearance:textfield;
+  }
+  .slider-field .head input[type="number"]::-webkit-outer-spin-button,
+  .slider-field .head input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+  .slider-field .head input[type="number"]:focus-visible{outline:2px solid var(--focus); outline-offset:2px; border-radius:3px;}
+  .slider-field .head .unit{font-size:10.5px; color:var(--ink-muted);}
+  .slider-field input[type="range"].neutral{
+    background:linear-gradient(90deg, var(--accent) 0%, var(--accent) var(--fill,50%), var(--surface-2) var(--fill,50%), var(--surface-2) 100%);
+  }
+  .field-hint{font-size:10.5px; color:var(--ink-faint); line-height:1.4; margin-top:4px;}
+  .custom-subhead{
+    font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ink-faint); margin:16px 0 10px; padding-top:12px; border-top:1px dashed var(--border);
+  }
+
+  /* locked inputs read clearly as inert, not just faded */
+  .params-body input:disabled{
+    opacity:.5; cursor:not-allowed;
+  }
+  .params-body input[type="range"]:disabled::-webkit-slider-thumb{cursor:not-allowed;}
+  .params-body input[type="range"]:disabled::-moz-range-thumb{cursor:not-allowed;}
+
+  /* --- params panel: collapsible header + condensed chip summary --- */
+  .params-panel{padding-bottom:14px;}
+  .panel-toggle{
+    width:100%; display:flex; align-items:center; justify-content:space-between;
+    background:none; border:none; padding:0; margin:0 0 10px; cursor:pointer; color:var(--ink);
+    font:inherit;
+  }
+  .panel-toggle .chevron{color:var(--ink-faint); transition:transform .15s ease; flex:0 0 auto;}
+  .panel-toggle[aria-expanded="true"] .chevron{transform:rotate(180deg);}
+
+  .params-condensed{display:flex; flex-wrap:wrap; gap:6px;}
+  .param-chip{
+    display:inline-flex; align-items:baseline; gap:5px;
+    background:var(--surface-2); border:1px solid var(--border); border-radius:6px;
+    padding:4px 8px; font-size:11px;
+  }
+  .param-chip .k{color:var(--ink-faint); font-family:"IBM Plex Mono",monospace; letter-spacing:.02em;}
+  .param-chip .v{color:var(--ink); font-family:"IBM Plex Mono",monospace;}
+
+  .params-body{margin-top:14px; padding-top:14px; border-top:1px solid var(--border);}
+  .lock-bar{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  .lock-status{font-size:11.5px; color:var(--ink-muted); line-height:1.5;}
+  .lock-status strong{color:var(--ink);}
+  .customize-btn{
+    flex:0 0 auto; font-size:11.5px; font-family:"IBM Plex Mono",monospace;
+    background:var(--surface-2); border:1px solid var(--border-strong); color:var(--ink);
+    border-radius:6px; padding:5px 10px; cursor:pointer;
+  }
+  .customize-btn:hover{border-color:var(--accent);}
+
+  .confirm-row{
+    margin-top:10px; padding:10px 11px; border-radius:8px;
+    background:var(--warn-soft); border:1px solid var(--warn);
+  }
+  .confirm-row p{margin:0 0 8px; font-size:11.5px; color:var(--ink); line-height:1.5;}
+  .confirm-buttons{display:flex; gap:8px;}
+  .confirm-buttons button{
+    font-size:11.5px; border-radius:6px; padding:5px 10px; cursor:pointer; font-family:"IBM Plex Sans",sans-serif;
+  }
+  #confirmYes{background:var(--warn); border:1px solid var(--warn); color:var(--surface);}
+  #confirmNo{background:transparent; border:1px solid var(--border-strong); color:var(--ink);}
+
+  .revert-link{
+    margin-top:14px; font-size:11.5px; background:none; border:none; color:var(--bad);
+    cursor:pointer; padding:0; text-decoration:underline; text-underline-offset:2px;
+  }
+
+  /* --- results --- */
+  .results{display:flex; flex-direction:column; gap:20px; min-width:0;}
+
+  .strip-scroll{overflow-x:auto; padding-bottom:4px; margin:0 -2px;}
+  .strip{display:flex; gap:10px; padding:2px;}
+  .candidate{
+    flex:0 0 auto;
+    min-width:158px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:9px;
+    padding:11px 12px;
+    cursor:pointer;
+    box-shadow:var(--shadow);
+  }
+  .candidate.selected{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft), var(--shadow);}
+  .candidate.leaderless{opacity:.55;}
+  .candidate .pos{font-family:"IBM Plex Mono", monospace; font-size:10.5px; color:var(--ink-faint);}
+  .candidate .codon{font-family:"IBM Plex Mono", monospace; font-size:16px; font-weight:600; letter-spacing:.03em;}
+  .candidate .dg{font-family:"IBM Plex Mono", monospace; font-size:12px; color:var(--ink-muted); margin-top:2px;}
+  .candidate .bar-track{height:5px; border-radius:100px; background:var(--surface-2); margin-top:8px; overflow:hidden;}
+  .candidate .bar-fill{height:100%; background:var(--accent); border-radius:100px;}
+  .candidate .leaderless-tag{font-size:10px; color:var(--bad); margin-top:6px; font-family:"IBM Plex Mono",monospace;}
+
+  .detail{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:20px;
+    box-shadow:var(--shadow);
+    display:flex; flex-direction:column; gap:20px;
+  }
+  .detail-head{display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap;}
+  .headline{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .headline .rate{font-family:"Newsreader", serif; font-size:42px; font-weight:500;}
+  .headline .rate-unit{font-size:12.5px; color:var(--ink-muted);}
+  .headline .dg-total{font-family:"IBM Plex Mono", monospace; font-size:14px; color:var(--ink-muted);}
+  .headline .dg-total b{color:var(--ink); font-weight:600;}
+  .loc-tag{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--ink-faint); text-align:right;}
+
+  .section-label{
+    font-family:"IBM Plex Mono", monospace; font-size:11px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--ink-faint); margin-bottom:10px;
+  }
+
+  .terms-chart{display:flex; flex-direction:column; gap:7px;}
+  .term-row{display:grid; grid-template-columns:96px 1fr 68px; align-items:center; gap:10px;}
+  .term-row .tname{font-size:12.5px; color:var(--ink-muted);}
+  .term-row .tval{font-family:"IBM Plex Mono",monospace; font-size:12.5px; text-align:right; font-variant-numeric:tabular-nums;}
+  .term-row .tval.neg{color:var(--good);}
+  .term-row .tval.pos{color:var(--bad);}
+  .diverge{position:relative; height:16px; background:var(--surface-2); border-radius:4px; overflow:hidden;}
+  .diverge .zero{position:absolute; top:0; bottom:0; width:1px; background:var(--border-strong);}
+  .diverge .fill{position:absolute; top:1px; bottom:1px; border-radius:3px;}
+  .diverge .fill.neg{background:var(--good);}
+  .diverge .fill.pos{background:var(--bad);}
+  .term-note{grid-column:1/-1; font-size:11px; color:var(--ink-faint); margin-top:-3px; margin-left:1px;}
+
+  .ladder-figure{margin:0;}
+  .ladder-figure svg{width:100%; height:auto; display:block;}
+  .ladder-figure figcaption{font-size:11.5px; color:var(--ink-muted); margin-top:8px; line-height:1.5;}
+
+  .empty-state{
+    padding:40px 20px; text-align:center; color:var(--ink-muted);
+    background:var(--surface); border:1px dashed var(--border-strong); border-radius:10px;
+  }
+
+  .leaderless-list{font-size:12px; color:var(--ink-faint); display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
+  .leaderless-list .lchip{font-family:"IBM Plex Mono",monospace; background:var(--surface-2); border-radius:5px; padding:2px 6px;}
+
+  footer.credits{
+    grid-column:1/-1; margin-top:8px; padding-top:16px; border-top:1px solid var(--border);
+    font-size:11.5px; color:var(--ink-faint); display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+</style>
+
+<div class="app">
+  <header class="masthead">
+    <div class="brand">
+      <h1>RBSForge Console</h1>
+      <span class="tag">predict mode · live</span>
+    </div>
+    <div class="subtitle">A thermodynamic, term-by-term translation-initiation calculator — no black box, every ΔG shown.</div>
+  </header>
+
+  <div class="rail">
+    <div class="panel">
+      <div class="panel-title">mRNA sequence</div>
+      <textarea id="sequence" class="mono" spellcheck="false"></textarea>
+      <div class="seq-meta">
+        <span id="seqLen">0 nt</span>
+        <span id="seqWarn" class="warn"></span>
+      </div>
+      <button class="example-btn" id="exampleBtn" type="button">Load example construct</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Host organism</div>
+      <select id="speciesSelect"></select>
+      <div class="species-summary" id="speciesSummary"></div>
+
+      <div class="species-search">
+        <label for="speciesSearch">Organism not on the list?</label>
+        <input type="text" id="speciesSearch" placeholder="Search, e.g. “Vibrio” or “yeast”" autocomplete="off">
+        <div class="search-results" id="searchResults"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Temperature<span id="calBadgeSlot"></span></div>
+      <div class="temp-readout">
+        <input type="number" id="tempInput" class="tnum" min="4" max="100" step="0.5" value="37">
+        <span class="unit">°C</span>
+        <span class="kelvin tnum" id="tempKelvin">310.15 K</span>
+      </div>
+      <div class="slider-wrap">
+        <input type="range" id="tempSlider" min="4" max="100" step="0.5" value="37">
+        <div class="growth-tick" id="growthTick"></div>
+        <div class="slider-scale">
+          <span class="scale-mark" id="scaleMin">4°C</span>
+          <span class="scale-mark" id="scaleMid">52°C</span>
+          <span class="scale-mark" id="scaleMax">100°C</span>
+        </div>
+      </div>
+      <button class="reset-link" id="resetTemp" type="button">Reset to this host's growth temperature</button>
+      <div class="caveat" id="betaCaveat"></div>
+    </div>
+
+    <div class="panel params-panel">
+      <button type="button" class="panel-toggle" id="paramsToggle" aria-expanded="false" aria-controls="paramsBody">
+        <span class="panel-title" style="margin:0;">Organism parameters</span>
+        <svg class="chevron" id="paramsChevron" width="11" height="11" viewBox="0 0 10 10" aria-hidden="true">
+          <path d="M1 3 L5 7 L9 3" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="params-condensed" id="paramsCondensed"></div>
+
+      <div class="params-body" id="paramsBody" hidden>
+        <div class="lock-bar">
+          <span class="lock-status" id="lockStatus"></span>
+          <button type="button" class="customize-btn" id="lockToggleBtn"></button>
+        </div>
+        <div class="confirm-row" id="confirmRow" hidden>
+          <p id="confirmText"></p>
+          <div class="confirm-buttons">
+            <button type="button" id="confirmYes">Yes, unlock for editing</button>
+            <button type="button" id="confirmNo">Cancel</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="customAsd">Anti-SD tail (16S rRNA 3' end)</label>
+          <input type="text" id="customAsd" class="mono" spellcheck="false" disabled>
+          <div class="field-hint" id="customAsdHint"></div>
+        </div>
+
+        <div class="slider-field">
+          <div class="head">
+            <label for="customSOpt">Optimal aligned spacing</label>
+            <span class="readout"><input type="number" id="customSOptNum" min="0" max="16" step="1" disabled><span class="unit">nt</span></span>
+          </div>
+          <input type="range" class="neutral" id="customSOpt" min="0" max="16" step="1" disabled>
+        </div>
+
+        <div class="slider-field">
+          <div class="head">
+            <label for="customBeta">β (free energy → rate)</label>
+            <span class="readout"><input type="number" id="customBetaNum" min="0.10" max="0.90" step="0.01" disabled><span class="unit">mol/kcal</span></span>
+          </div>
+          <input type="range" class="neutral" id="customBeta" min="0.10" max="0.90" step="0.01" disabled>
+        </div>
+
+        <div class="slider-field">
+          <div class="head">
+            <label for="customTgrowth">Reference growth temperature</label>
+            <span class="readout"><input type="number" id="customTgrowthNum" min="4" max="100" step="1" disabled><span class="unit">°C</span></span>
+          </div>
+          <input type="range" class="neutral" id="customTgrowth" min="4" max="100" step="1" disabled>
+          <div class="field-hint">Used by "reset to growth temperature" and the calibration badge — not the current experiment temperature above.</div>
+        </div>
+
+        <div class="custom-subhead">Start codon energies (ΔG, kcal/mol)</div>
+
+        <div class="slider-field">
+          <div class="head"><label for="customAUG">AUG</label>
+            <span class="readout"><input type="number" id="customAUGNum" min="-3" max="2" step="0.01" disabled></span>
+          </div>
+          <input type="range" class="neutral" id="customAUG" min="-3" max="2" step="0.01" disabled>
+        </div>
+        <div class="slider-field">
+          <div class="head"><label for="customGUG">GUG</label>
+            <span class="readout"><input type="number" id="customGUGNum" min="-3" max="2" step="0.01" disabled></span>
+          </div>
+          <input type="range" class="neutral" id="customGUG" min="-3" max="2" step="0.01" disabled>
+        </div>
+        <div class="slider-field">
+          <div class="head"><label for="customUUG">UUG</label>
+            <span class="readout"><input type="number" id="customUUGNum" min="-3" max="2" step="0.01" disabled></span>
+          </div>
+          <input type="range" class="neutral" id="customUUG" min="-3" max="2" step="0.01" disabled>
+        </div>
+
+        <div class="caveat">Spacing-curve shape and standby-site coefficients stay the host's original value here — refitting those needs a real calibration library (see rbsforge/docs/MODEL.md), not a slider.</div>
+
+        <button type="button" class="revert-link" id="revertBtn" hidden>Discard custom values, use published data</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="results">
+    <div>
+      <div class="section-label">Candidate start codons, ranked by predicted rate</div>
+      <div class="strip-scroll"><div class="strip" id="candidateStrip"></div></div>
+    </div>
+
+    <div id="detailMount"></div>
+
+    <div id="leaderlessMount"></div>
+  </div>
+
+  <footer class="credits">
+    <span>Reimplements the Salis Lab RBS Calculator's free-energy model (Salis, Mirsky &amp; Voigt 2009, and successors) from scratch, in-browser.</span>
+    <span>β fit ≈37 °C on <em>E. coli</em> — see the host-organism calibration badges.</span>
+  </footer>
+</div>
+
+<script>
+/* ======================= MODEL (ported from rbsforge/, Python) ======================= */
+// RBSForge model port (JS) -- mirrors the Python package in rbsforge/.
+// See rbsforge/docs/MODEL.md in the repo for citations and caveats.
+
+const GAS_CONSTANT_KCAL = 0.0019872041;
+const REFERENCE_T_K = 310.15;
+const BETA_DEFAULT = 0.45;
+// Frozen TIR scale per rbsforge/CLAUDE.md: v1_style_rate = K * exp(-dG/RT_eff)
+// is what the rest of the Operon Calculator (HTISC, coupling, design)
+// thresholds and mixes rates against. translation_initiation_rate (the
+// proportional exp(-beta*dG) scale) is shown as the primary readout here
+// for pedagogy, but never compare the two -- see the CLAUDE.md note.
+const V1_PREFACTOR_K = 2500.0;
+
+function rt(tK) { return GAS_CONSTANT_KCAL * tK; }
+function celsiusToKelvin(c) { return c + 273.15; }
+
+// --- sequence utils -------------------------------------------------------
+function toRNA(seq) {
+  return seq.trim().toUpperCase().replace(/T/g, "U");
+}
+function isACGU(ch) { return ch === "A" || ch === "C" || ch === "G" || ch === "U"; }
+function sanitizeRNA(seq) {
+  return toRNA(seq).split("").filter(isACGU).join("");
+}
+const WC_PAIRS = new Set(["AU", "UA", "GC", "CG"]);
+const WOBBLE_PAIRS = new Set(["GU", "UG"]);
+function isWatsonCrick(a, b) { return WC_PAIRS.has(a + b); }
+function isWobble(a, b) { return WOBBLE_PAIRS.has(a + b); }
+
+// --- nearest-neighbor parameters ------------------------------------------
+const WC_STACKS_37 = {
+  "AA/UU": [-0.93, -6.82], "AU/UA": [-1.10, -9.38], "UA/AU": [-1.33, -7.69],
+  "CU/GA": [-2.08, -10.48], "CA/GU": [-2.11, -10.44], "GU/CA": [-2.24, -11.40],
+  "GA/CU": [-2.35, -12.44], "CG/GC": [-2.36, -10.64], "GG/CC": [-3.26, -13.39],
+  "GC/CG": [-3.42, -14.88],
+};
+(function addReverseDuplicates() {
+  const entries = Object.entries(WC_STACKS_37);
+  for (const [key, value] of entries) {
+    const [top, bottom] = key.split("/");
+    const revKey = bottom.split("").reverse().join("") + "/" + top.split("").reverse().join("");
+    if (!(revKey in WC_STACKS_37)) WC_STACKS_37[revKey] = value;
+  }
+})();
+
+function scaled(dg37, dh, tK) {
+  if (dh === 0) return dg37;
+  const ds = (dh - dg37) / REFERENCE_T_K;
+  return dh - tK * ds;
+}
+function watsonCrickStack(key, tK) {
+  const pair = WC_STACKS_37[key] || [0, 0];
+  return scaled(pair[0], pair[1], tK);
+}
+const HELIX_INITIATION_37 = 4.09;
+const TERMINAL_AU_PENALTY_37 = 0.45;
+const INTERNAL_MISMATCH_PENALTY_37 = 1.8;
+const WOBBLE_PENALTY_37 = 0.5;
+function helixInitiation() { return HELIX_INITIATION_37; }
+function terminalAuPenalty() { return TERMINAL_AU_PENALTY_37; }
+function internalMismatchPenalty() { return INTERNAL_MISMATCH_PENALTY_37; }
+function wobblePenalty() { return WOBBLE_PENALTY_37; }
+
+const HAIRPIN_LOOP_37 = { 3: 5.4, 4: 5.6, 5: 5.7, 6: 5.4, 7: 6.0, 8: 5.5, 9: 6.4 };
+const HAIRPIN_REF_SIZE = 9;
+const HAIRPIN_REF_DG37 = HAIRPIN_LOOP_37[HAIRPIN_REF_SIZE];
+function hairpinLoopEnergy(loopSize, tK) {
+  if (loopSize < 3) return Infinity;
+  let dg37;
+  if (loopSize in HAIRPIN_LOOP_37) dg37 = HAIRPIN_LOOP_37[loopSize];
+  else dg37 = HAIRPIN_REF_DG37 + 1.75 * rt(REFERENCE_T_K) * Math.log(loopSize / HAIRPIN_REF_SIZE);
+  return dg37 * (tK / REFERENCE_T_K);
+}
+
+// --- folding (Zuker/Nussinov-lite: stacks + hairpins only) ---------------
+function pairable(a, b) { return isWatsonCrick(a, b) || isWobble(a, b); }
+
+function fold(sequence, forcedUnpaired, temperatureK) {
+  const seq = sanitizeRNA(sequence);
+  const n = seq.length;
+  const forced = forcedUnpaired || new Set();
+  const tK = temperatureK === undefined ? REFERENCE_T_K : temperatureK;
+  if (n < 4) return { deltaG: 0.0, pairs: [] };
+
+  const INF = Infinity;
+  const v = Array.from({ length: n }, () => new Array(n).fill(INF));
+  const vChoice = Array.from({ length: n }, () => new Array(n).fill(null));
+
+  for (let span = 4; span < n; span++) {
+    for (let i = 0; i < n - span; i++) {
+      const j = i + span;
+      if (forced.has(i) || forced.has(j)) continue;
+      if (!pairable(seq[i], seq[j])) continue;
+      let bestDg = INF, bestKind = null;
+      const loopSize = j - i - 1;
+      if (loopSize >= 3) {
+        const dg = hairpinLoopEnergy(loopSize, tK);
+        if (dg < bestDg) { bestDg = dg; bestKind = "hairpin"; }
+      }
+      if (j - 1 > i + 1 && v[i + 1][j - 1] < INF) {
+        const key = `${seq[i]}${seq[i + 1]}/${seq[j - 1]}${seq[j]}`;
+        const dg = watsonCrickStack(key, tK) + v[i + 1][j - 1];
+        if (dg < bestDg) { bestDg = dg; bestKind = "stack"; }
+      }
+      if (bestKind) { v[i][j] = bestDg; vChoice[i][j] = bestKind; }
+    }
+  }
+
+  const w = new Array(n + 1).fill(0.0);
+  const traceback = new Array(n + 1).fill(null);
+  for (let j = 0; j < n; j++) {
+    let best = w[j];
+    let choice = ["unpaired", j, j];
+    for (let i = 0; i < j - 3; i++) {
+      if (v[i][j] < INF) {
+        const candidate = w[i] + v[i][j];
+        if (candidate < best) { best = candidate; choice = ["paired", i, j]; }
+      }
+    }
+    w[j + 1] = best;
+    traceback[j + 1] = choice;
+  }
+
+  const pairs = [];
+  let jIdx = n;
+  while (jIdx > 0) {
+    const [kind, i, j] = traceback[jIdx];
+    if (kind === "unpaired") { jIdx = j; }
+    else {
+      let ci = i, cj = j;
+      while (true) {
+        pairs.push([ci, cj]);
+        if (vChoice[ci][cj] === "stack") { ci += 1; cj -= 1; }
+        else break;
+      }
+      jIdx = i;
+    }
+  }
+  pairs.sort((a, b) => a[0] - b[0]);
+  return { deltaG: w[n], pairs };
+}
+
+function makeFolder(temperatureK) {
+  return {
+    temperatureK,
+    fold(sequence, forcedUnpaired) {
+      return fold(sequence, forcedUnpaired, temperatureK);
+    },
+  };
+}
+
+// --- SD:anti-SD duplex search ---------------------------------------------
+const WC = "wc", WOBBLE = "wobble", MISMATCH = "mismatch";
+function pairType(m, a) {
+  if (isWatsonCrick(m, a)) return WC;
+  if (isWobble(m, a)) return WOBBLE;
+  return MISMATCH;
+}
+function isAuOrGu(m, a) {
+  const p = m + a;
+  return p === "AU" || p === "UA" || p === "GU" || p === "UG";
+}
+
+const NO_ALIGNMENT = {
+  deltaGHybrid: 0, mrnaStart: 0, mrnaEnd: 0, mrnaSegment: "", antisdSegment: "",
+  nWatsonCrick: 0, nWobble: 0, nMismatch: 0, rawSpacing: 0, overhang: 0,
+  alignedSpacing: 0, length: 0,
+};
+
+function bestHybridization(mrnaWindow, antiSd, startCodonIndex, spacingEnergyFn, tK, minLength, maxInternalMismatches) {
+  minLength = minLength || 4;
+  maxInternalMismatches = maxInternalMismatches === undefined ? 1 : maxInternalMismatches;
+  const mrna = sanitizeRNA(mrnaWindow);
+  const asd = sanitizeRNA(antiSd);
+  const n = mrna.length, k = asd.length;
+  if (n === 0 || k === 0) return { alignment: NO_ALIGNMENT, total: spacingEnergyFn(startCodonIndex) };
+
+  let best = null, bestTotal = Infinity;
+
+  for (let offset = -(k - 1); offset < n; offset++) {
+    const lo = Math.max(0, offset);
+    const hi = Math.min(n, offset + k) - 1;
+    if (hi - lo + 1 < minLength) continue;
+
+    const antisdIndex = (i) => (k - 1) - (i - offset);
+    const pairTypes = [];
+    for (let i = lo; i <= hi; i++) pairTypes.push(pairType(mrna[i], asd[antisdIndex(i)]));
+
+    for (let start = 0; start < pairTypes.length; start++) {
+      if (pairTypes[start] === MISMATCH) continue;
+      for (let end = start; end < pairTypes.length; end++) {
+        if (pairTypes[end] === MISMATCH) continue;
+        const length = end - start + 1;
+        if (length < minLength) continue;
+        let mismatches = 0;
+        for (let x = start; x <= end; x++) if (pairTypes[x] === MISMATCH) mismatches++;
+        if (mismatches > maxInternalMismatches) break;
+
+        const candidate = buildAlignment(mrna, asd, offset, lo + start, lo + end, pairTypes.slice(start, end + 1), startCodonIndex, tK);
+        const total = candidate.deltaGHybrid + spacingEnergyFn(candidate.alignedSpacing);
+        if (total < bestTotal) { best = candidate; bestTotal = total; }
+      }
+    }
+  }
+
+  if (best === null) return { alignment: NO_ALIGNMENT, total: spacingEnergyFn(startCodonIndex) };
+  return { alignment: best, total: bestTotal };
+}
+
+function buildAlignment(mrna, asd, offset, iStart, iEnd, pairTypes, startCodonIndex, tK) {
+  const k = asd.length;
+  const antisdIndex = (i) => (k - 1) - (i - offset);
+
+  let energy = helixInitiation();
+  for (let i = iStart; i < iEnd; i++) {
+    const t0 = pairTypes[i - iStart], t1 = pairTypes[i - iStart + 1];
+    if (t0 === WC && t1 === WC) {
+      const m0 = mrna[i], m1 = mrna[i + 1];
+      const a0 = asd[antisdIndex(i)], a1 = asd[antisdIndex(i + 1)];
+      energy += watsonCrickStack(`${m0}${m1}/${a0}${a1}`, tK);
+    } else if (t0 === MISMATCH || t1 === MISMATCH) {
+      energy += internalMismatchPenalty();
+    } else {
+      energy += wobblePenalty();
+    }
+  }
+  if (isAuOrGu(mrna[iStart], asd[antisdIndex(iStart)])) energy += terminalAuPenalty();
+  if (isAuOrGu(mrna[iEnd], asd[antisdIndex(iEnd)])) energy += terminalAuPenalty();
+
+  let antisdSegment = "";
+  for (let i = iStart; i <= iEnd; i++) antisdSegment += asd[antisdIndex(i)];
+
+  const overhang = iStart - offset;
+  const rawSpacing = startCodonIndex - (iEnd + 1);
+  const alignedSpacing = rawSpacing - overhang;
+
+  return {
+    deltaGHybrid: energy, mrnaStart: iStart, mrnaEnd: iEnd + 1,
+    mrnaSegment: mrna.slice(iStart, iEnd + 1), antisdSegment,
+    nWatsonCrick: pairTypes.filter((t) => t === WC).length,
+    nWobble: pairTypes.filter((t) => t === WOBBLE).length,
+    nMismatch: pairTypes.filter((t) => t === MISMATCH).length,
+    rawSpacing, overhang, alignedSpacing,
+    length: (iEnd + 1) - iStart,
+  };
+}
+
+// --- spacing ---------------------------------------------------------------
+function spacingPenalty(alignedSpacing, sOpt, push, pull) {
+  const ds = alignedSpacing - sOpt;
+  if (ds < 0) {
+    const [p0, p1, p2, p3] = push;
+    return p0 / Math.pow(1 + Math.exp(p1 * (ds + p2)), p3);
+  }
+  const [q0, q1, q2] = pull;
+  return q0 * ds * ds + q1 * ds + q2;
+}
+
+// --- start codons ------------------------------------------------------
+const DEFAULT_SCANNED_CODONS = ["AUG", "GUG", "UUG"];
+const DEFAULT_START_CODON_DG = { AUG: -1.194, GUG: -0.0748, UUG: -0.0435, CUG: -0.03406 };
+function findStartCodons(sequence, allowedCodons) {
+  const seq = sanitizeRNA(sequence);
+  const allowed = new Set(allowedCodons);
+  const hits = [];
+  for (let i = 0; i < seq.length - 2; i++) {
+    const codon = seq.slice(i, i + 3);
+    if (allowed.has(codon)) hits.push([i, codon]);
+  }
+  return hits;
+}
+function startCodonEnergy(codon, energies) {
+  if (codon in energies) return energies[codon];
+  const values = Object.values(energies);
+  return Math.max(...values) + 1.0;
+}
+
+// --- standby ---------------------------------------------------------------
+function standbyPenalty(utrWindow, sdDuplexStart, standbySiteNt, folder) {
+  const standbyEnd = sdDuplexStart;
+  const standbyStart = Math.max(0, standbyEnd - standbySiteNt);
+  if (standbyEnd <= 0 || standbyStart >= standbyEnd) return { penalty: 0, start: standbyStart, end: standbyEnd };
+
+  const eBefore = folder.fold(utrWindow).deltaG;
+  const forced = new Set();
+  for (let i = standbyStart; i < standbyEnd; i++) forced.add(i);
+  const eAfter = folder.fold(utrWindow, forced).deltaG;
+
+  const deltaV1 = Math.min(0, eBefore - eAfter);
+  return { penalty: -deltaV1, start: standbyStart, end: standbyEnd };
+}
+
+// --- HostPacks ---------------------------------------------------------
+const DEFAULT_STANDBY = { c1: 0.038, c2: -1.629, c3: 17.359, cSlide: 0.20, hCap: 15, a0: 15, standbySiteNt: 4 };
+const HOSTPACKS = {
+  ecoli: {
+    key: "ecoli", name: "Escherichia coli K-12", phylogeny: "Gammaproteobacteria",
+    category: "mesophile", gramStain: "negative", tGrowthC: 37.0, asd: "ACCUCCUUA", sOpt: 5,
+    spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
+    standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
+    cutoffPost: 35, cutoffPre: null,
+    calibration: "calibrated", uncertainty: "low",
+    notes: "Reference organism -- every coefficient is the published, fitted v1.0/v2.0 value.",
+  },
+  b_subtilis: {
+    key: "b_subtilis", name: "Bacillus subtilis", phylogeny: "Firmicutes (Bacilli)",
+    category: "mesophile", gramStain: "positive", tGrowthC: 37.0, asd: "GAUCACCUCCUUUCU", sOpt: 8,
+    spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
+    standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
+    cutoffPost: 35, cutoffPre: null,
+    calibration: "prior", uncertainty: "low",
+    notes: "aSD tail is RNA-seq mapped (real); beta/spacing curvature/standby are the E. coli prior, not refit for this species.",
+  },
+  pseudomonas_putida: {
+    key: "pseudomonas_putida", name: "Pseudomonas putida", phylogeny: "Gammaproteobacteria",
+    category: "mesophile", gramStain: "negative", tGrowthC: 30.0, asd: "ACCUCCUUA", sOpt: 5,
+    spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
+    standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
+    cutoffPost: 35, cutoffPre: null,
+    calibration: "prior", uncertainty: "low",
+    notes: "Popular GC-rich Gammaproteobacterial chassis. aSD tail is presumed identical to E. coli's (16S rRNA 3' termini are highly conserved across Gammaproteobacteria) but not independently confirmed for this species. Growth temperature (30C) is real; beta/spacing/standby are the E. coli prior.",
+  },
+  geobacillus: {
+    key: "geobacillus", name: "Geobacillus / Parageobacillus thermoglucosidasius",
+    phylogeny: "Firmicutes (Bacilli), thermophile", category: "thermophile", gramStain: "positive", tGrowthC: 60.0,
+    asd: "GAUCACCUCCUUUCU", sOpt: 8,
+    spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
+    standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
+    cutoffPost: 35, cutoffPre: null,
+    calibration: "prior", uncertainty: "medium",
+    notes: "aSD borrowed from B. subtilis (unconfirmed for this genus). All non-temperature coefficients are the E. coli prior.",
+  },
+  clostridium_thermocellum: {
+    key: "clostridium_thermocellum", name: "Clostridium thermocellum", phylogeny: "Firmicutes, thermophile",
+    category: "thermophile", gramStain: "positive", tGrowthC: 60.0, asd: "GAUCACCUCCUUUCU", sOpt: 8,
+    spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
+    standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
+    cutoffPost: 35, cutoffPre: null,
+    calibration: "prior", uncertainty: "medium",
+    notes: "AT-richer genome than Thermus or Geobacillus; native SD usage is strong, but AT-rich SD:aSD duplexes that look strong at 37C can melt substantially by its ~60C growth temperature -- the van 't Hoff temperature scaling matters more here than for a GC-richer host. aSD borrowed from B. subtilis (unconfirmed for this genus).",
+  },
+  thermus: {
+    key: "thermus", name: "Thermus thermophilus", phylogeny: "Deinococcus-Thermus, thermophile",
+    category: "thermophile", gramStain: "negative", tGrowthC: 70.0, asd: "ACCUCCUUA", sOpt: 5,
+    spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
+    standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
+    cutoffPost: 35, cutoffPre: null,
+    calibration: "prior", uncertainty: "high",
+    notes: "Unconfirmed aSD, unmodeled 3'-terminal pseudouridines (Psi1540/Psi1541), E. coli-prior spacing/standby despite a documented different 30S platform (no S21).",
+  },
+  thermotoga_maritima: {
+    key: "thermotoga_maritima", name: "Thermotoga maritima", phylogeny: "Thermotogae, deep-branching hyperthermophile",
+    category: "thermophile", gramStain: "negative", tGrowthC: 80.0, asd: "ACCUCCUUA", sOpt: 5,
+    spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
+    standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
+    cutoffPost: 35, cutoffPre: null,
+    calibration: "prior", uncertainty: "high",
+    notes: "Highest-temperature, highest-uncertainty built-in profile. Everything but the growth temperature (80C) is an unconfirmed E. coli-derived placeholder, and at this temperature the model's own neglect of nearest-neighbor heat-capacity (deltaCp) effects becomes a real source of error (reported 1-3 kcal/mol per short helix by 75-100C) -- treat outputs here as illustrative of the model's limits, not as predictions.",
+  },
+  generic: {
+    key: "generic", name: "Generic / uncharacterized", phylogeny: "unknown",
+    category: "mesophile", gramStain: "unknown", tGrowthC: 37.0, asd: "ACCUCCUUA", sOpt: 5,
+    spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
+    standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
+    cutoffPost: 35, cutoffPre: null,
+    calibration: "prior", uncertainty: "high",
+    notes: "E. coli prior throughout. Replace the aSD tail at minimum before drawing conclusions.",
+  },
+};
+
+// --- predict ---------------------------------------------------------------
+const MAX_PRE_WINDOW = 200;
+
+function predict(mrnaSequence, hostpackOrKey, temperatureC) {
+  const hp = typeof hostpackOrKey === "string" ? HOSTPACKS[hostpackOrKey] : hostpackOrKey;
+  const tC = temperatureC === undefined || temperatureC === null ? hp.tGrowthC : temperatureC;
+  const tK = celsiusToKelvin(tC);
+  const folder = makeFolder(tK);
+  const sequence = sanitizeRNA(mrnaSequence);
+
+  const results = [];
+  for (const [index, codon] of findStartCodons(sequence, DEFAULT_SCANNED_CODONS)) {
+    results.push(scoreStartCodon(sequence, index, codon, hp, tK, folder));
+  }
+  return { sequence, hostpack: hp, temperatureC: tC, results };
+}
+
+function scoreStartCodon(sequence, index, codon, hp, tK, folder) {
+  const preAvailable = index;
+  let preLen = hp.cutoffPre !== null ? Math.min(hp.cutoffPre, preAvailable) : preAvailable;
+  preLen = Math.min(preLen, MAX_PRE_WINDOW);
+  const windowStart = index - preLen;
+  const windowEnd = Math.min(sequence.length, index + 3 + hp.cutoffPost);
+  const window = sequence.slice(windowStart, windowEnd);
+  const startInWindow = index - windowStart;
+  const utrInWindow = window.slice(0, startInWindow);
+
+  const spacingFn = (alignedSpacing) => spacingPenalty(alignedSpacing, hp.sOpt, hp.spacingPush, hp.spacingPull);
+
+  const { alignment: duplex } = bestHybridization(utrInWindow, hp.asd, startInWindow, spacingFn, tK, 4, 1);
+
+  if (duplex.length === 0) {
+    return { index, codon, leaderless: true, windowStart, windowEnd, window, startInWindow };
+  }
+
+  const deltaGmRNA = folder.fold(window).deltaG;
+  const deltaGspacing = spacingPenalty(duplex.alignedSpacing, hp.sOpt, hp.spacingPush, hp.spacingPull);
+  const deltaGstart = startCodonEnergy(codon, hp.startCodonDg);
+  const standby = standbyPenalty(window, duplex.mrnaStart, hp.standby.standbySiteNt, folder);
+
+  const terms = {
+    standby: standby.penalty,
+    "mRNA:rRNA": duplex.deltaGHybrid,
+    spacing: deltaGspacing,
+    start: deltaGstart,
+    stacking: 0.0,
+    mRNA: -deltaGmRNA,
+  };
+  const total = Object.values(terms).reduce((a, b) => a + b, 0);
+  const rate = Math.exp(-hp.beta * total);
+  const rateV1 = V1_PREFACTOR_K * Math.exp(-total / (1 / hp.beta));
+
+  return {
+    index, codon, leaderless: false, terms, total, rate, rateV1,
+    duplex, standby, windowStart, windowEnd, window, startInWindow,
+  };
+}
+
+
+/* ======================= APP ======================= */
+
+const EXAMPLE_SEQUENCE = "AGGAGGACAACTAAATGAAACGCATTAGCACCACCATTACCACCACCATCACCATTACCACAGGT";
+
+const state = {
+  species: "ecoli",
+  temperatureC: HOSTPACKS.ecoli.tGrowthC,
+  selectedIndex: null, // index into current results.results (by start-codon `index`)
+  searchLabel: null, // cosmetic-only: the typed name a "generic" fallback stands in for
+  customHostpack: null, // user-edited HostPack override; exists only after a real edit
+  customOrigin: null, // name of the real HostPack the custom values were cloned from
+  paramsExpanded: false, // organism-parameters panel: collapsed/condensed vs. expanded
+  paramsUnlocked: false, // can the expanded sliders currently be dragged/typed into
+  confirmPending: false, // the inline "are you sure" row is showing
+};
+
+// Every HostPack's parameters are always visible (in the condensed chips,
+// and as real sliders once expanded), for every species -- not just
+// Generic/uncharacterized. They start locked and read-only, because they
+// are either a published value (for a calibrated/prior host) or a
+// documented placeholder (for an uncharacterized one), not something to
+// bump by accident. "Customize..." requires an explicit confirmation
+// before anything becomes editable; the moment a value actually changes,
+// the active profile detaches into a Generic/uncharacterized copy (edits
+// never mutate a HOSTPACKS entry in place) and the species selector
+// follows along. Only the parameters the model documentation treats as
+// legitimately organism-specific are exposed (anti-SD tail, optimal
+// spacing, beta, growth temperature, and the start codons this console
+// actually scans for) -- spacing-curve shape and standby-site
+// coefficients stay fixed, since the model's own docs say those need real
+// calibration data, not a slider.
+function cloneHostpack(hp) {
+  return {
+    ...hp,
+    key: "generic",
+    name: "Generic / uncharacterized",
+    spacingPush: [...hp.spacingPush],
+    spacingPull: [...hp.spacingPull],
+    standby: { ...hp.standby },
+    startCodonDg: { ...hp.startCodonDg },
+    calibration: "prior",
+    uncertainty: "high",
+    notes: hp.key === "generic"
+      ? "Custom parameters -- edit the fields below. Everything not exposed here stays the documented E. coli prior."
+      : `Custom parameters, derived from ${hp.name}. Everything not exposed here stays that host's original value.`,
+  };
+}
+function getActiveHostpack() {
+  if (state.species === "generic" && state.customHostpack) return state.customHostpack;
+  return HOSTPACKS[state.species];
+}
+// Applies one edit from the (always-visible, unlock-gated) parameter
+// controls: on the *first* edit of a session, clones whichever HostPack is
+// currently active (named or generic) into state.customHostpack and, if
+// that wasn't already generic, switches the active species to it.
+// Subsequent edits just mutate the same clone.
+function applyCustomEdit(mutatorFn) {
+  if (!state.customHostpack) {
+    const origin = getActiveHostpack();
+    state.customOrigin = origin.key === "generic" ? null : origin.name;
+    state.customHostpack = cloneHostpack(origin);
+  }
+  mutatorFn(state.customHostpack);
+  if (state.species !== "generic") {
+    state.species = "generic";
+    el.speciesSelect.value = "generic";
+  }
+  state.searchLabel = null;
+  renderSpeciesSummary();
+  updateGrowthTick();
+  updateCaveat();
+  syncParamsPanel();
+  scheduleRecompute();
+}
+
+const el = {
+  sequence: document.getElementById("sequence"),
+  seqLen: document.getElementById("seqLen"),
+  seqWarn: document.getElementById("seqWarn"),
+  exampleBtn: document.getElementById("exampleBtn"),
+  speciesSelect: document.getElementById("speciesSelect"),
+  speciesSummary: document.getElementById("speciesSummary"),
+  speciesSearch: document.getElementById("speciesSearch"),
+  searchResults: document.getElementById("searchResults"),
+  paramsToggle: document.getElementById("paramsToggle"),
+  paramsChevron: document.getElementById("paramsChevron"),
+  paramsCondensed: document.getElementById("paramsCondensed"),
+  paramsBody: document.getElementById("paramsBody"),
+  lockStatus: document.getElementById("lockStatus"),
+  lockToggleBtn: document.getElementById("lockToggleBtn"),
+  confirmRow: document.getElementById("confirmRow"),
+  confirmText: document.getElementById("confirmText"),
+  confirmYes: document.getElementById("confirmYes"),
+  confirmNo: document.getElementById("confirmNo"),
+  revertBtn: document.getElementById("revertBtn"),
+  customAsd: document.getElementById("customAsd"),
+  customAsdHint: document.getElementById("customAsdHint"),
+  tempSlider: document.getElementById("tempSlider"),
+  tempInput: document.getElementById("tempInput"),
+  tempKelvin: document.getElementById("tempKelvin"),
+  growthTick: document.getElementById("growthTick"),
+  scaleMin: document.getElementById("scaleMin"),
+  scaleMid: document.getElementById("scaleMid"),
+  scaleMax: document.getElementById("scaleMax"),
+  resetTemp: document.getElementById("resetTemp"),
+  betaCaveat: document.getElementById("betaCaveat"),
+  calBadgeSlot: document.getElementById("calBadgeSlot"),
+  candidateStrip: document.getElementById("candidateStrip"),
+  detailMount: document.getElementById("detailMount"),
+  leaderlessMount: document.getElementById("leaderlessMount"),
+};
+const TEMP_MIN = parseFloat(el.tempSlider.min), TEMP_MAX = parseFloat(el.tempSlider.max);
+el.scaleMin.textContent = `${TEMP_MIN}°C`;
+el.scaleMid.textContent = `${((TEMP_MIN + TEMP_MAX) / 2).toFixed(0)}°C`;
+el.scaleMax.textContent = `${TEMP_MAX}°C`;
+
+function fmtSigned(n, digits) {
+  digits = digits === undefined ? 2 : digits;
+  const s = n.toFixed(digits);
+  return (n >= 0 ? "+" : "") + s;
+}
+function fmtRate(r) {
+  if (r >= 1000) return r.toFixed(0);
+  if (r >= 10) return r.toFixed(1);
+  return r.toFixed(2);
+}
+
+/* ---- species: dropdown + summary + search ---- */
+const CATEGORY_LABEL = { mesophile: "Mesophiles", thermophile: "Thermophiles" };
+
+function populateSpeciesSelect() {
+  const byCategory = {};
+  Object.values(HOSTPACKS).forEach((hp) => {
+    (byCategory[hp.category] = byCategory[hp.category] || []).push(hp);
+  });
+  el.speciesSelect.innerHTML = Object.keys(byCategory)
+    .map((cat) => {
+      const opts = byCategory[cat]
+        .map((hp) => `<option value="${hp.key}">${hp.name}</option>`)
+        .join("");
+      return `<optgroup label="${CATEGORY_LABEL[cat] || cat}">${opts}</optgroup>`;
+    })
+    .join("");
+  el.speciesSelect.value = state.species;
+}
+
+function renderSpeciesSummary() {
+  const hp = getActiveHostpack();
+  const status = calibrationStatus(hp, state.temperatureC);
+  // hp.notes already states "derived from X" for a customized profile
+  // (see cloneHostpack) -- only the search-fallback note is added here.
+  const notes = [];
+  if (state.searchLabel) notes.push(`Standing in for “${state.searchLabel}” — not a real profile for that organism.`);
+  el.speciesSummary.innerHTML = `
+    <div class="row1"><span class="sci-name">${hp.name}</span></div>
+    <div class="row2">
+      <span class="meta">${hp.gramStain} · T<sub>growth</sub> ${hp.tGrowthC.toFixed(0)}°C · s<sub>opt</sub> ${hp.sOpt} nt</span>
+      <span class="badge ${status}">${status}</span>
+    </div>
+    <div class="notes">${hp.notes}</div>
+    ${notes.map((n) => `<div class="notes">${n}</div>`).join("")}`;
+}
+
+function selectSpecies(key, opts) {
+  opts = opts || {};
+  state.species = key;
+  state.searchLabel = opts.label || null;
+  if (opts.resetCustom) { state.customHostpack = null; state.customOrigin = null; }
+  state.paramsUnlocked = false;
+  state.confirmPending = false;
+  el.speciesSelect.value = key;
+  if (opts.matchTemperature !== false) {
+    state.temperatureC = getActiveHostpack().tGrowthC;
+    el.tempSlider.value = state.temperatureC;
+  }
+  updateGrowthTick();
+  updateTempReadout();
+  updateCaveat();
+  syncParamsPanel();
+  clearSearch();
+  recompute();
+}
+
+function clearSearch() {
+  el.speciesSearch.value = "";
+  el.searchResults.innerHTML = "";
+}
+
+function runSpeciesSearch() {
+  const q = el.speciesSearch.value.trim().toLowerCase();
+  if (!q) { el.searchResults.innerHTML = ""; return; }
+  const hits = Object.values(HOSTPACKS).filter(
+    (hp) => hp.key !== "generic" && (hp.name.toLowerCase().includes(q) || hp.phylogeny.toLowerCase().includes(q))
+  );
+  if (hits.length) {
+    el.searchResults.innerHTML = hits
+      .map((hp) => `<button type="button" class="search-hit" data-key="${hp.key}"><span class="sci-name">${hp.name}</span></button>`)
+      .join("");
+    el.searchResults.querySelectorAll(".search-hit").forEach((btn) => {
+      btn.addEventListener("click", () => selectSpecies(btn.dataset.key));
+    });
+  } else {
+    const typed = el.speciesSearch.value.trim();
+    el.searchResults.innerHTML = `
+      <div class="search-empty">
+        No built-in profile for “${typed}”. Nothing here is fabricated to fill the gap —
+        see <span class="mono">rbsforge/docs/MODEL.md</span> for how to build a real HostPack (16S rRNA anti-SD tail, growth temperature, Gram stain) once you have the data.
+        <button type="button" id="useGenericBtn">Use the Generic/uncharacterized prior for now, labeled “${typed}”</button>
+      </div>`;
+    document.getElementById("useGenericBtn").addEventListener("click", () => {
+      selectSpecies("generic", { label: typed, resetCustom: true });
+    });
+  }
+}
+
+/* ---- organism-parameters panel: collapsed chips + locked/unlockable sliders ---- */
+const PARAM_INPUT_IDS = [
+  "customAsd",
+  "customSOpt", "customSOptNum",
+  "customBeta", "customBetaNum",
+  "customTgrowth", "customTgrowthNum",
+  "customAUG", "customAUGNum",
+  "customGUG", "customGUGNum",
+  "customUUG", "customUUGNum",
+];
+
+function describeAsd(seq) {
+  return seq.length < 4
+    ? "Enter at least 4 nt -- with none, no candidate can find an SD match (every start reports leaderless)."
+    : `${seq.length} nt, normalized to RNA: ${seq}`;
+}
+
+function renderCondensedChips(hp) {
+  const chip = (k, v) => `<span class="param-chip"><span class="k">${k}</span><span class="v">${v}</span></span>`;
+  el.paramsCondensed.innerHTML = [
+    chip("aSD", hp.asd || "(none)"),
+    chip("s_opt", hp.sOpt + " nt"),
+    chip("β", hp.beta.toFixed(2)),
+    chip("T_growth", hp.tGrowthC.toFixed(0) + "°C"),
+    chip("AUG", hp.startCodonDg.AUG.toFixed(2)),
+    chip("GUG", hp.startCodonDg.GUG.toFixed(2)),
+    chip("UUG", hp.startCodonDg.UUG.toFixed(2)),
+  ].join("");
+}
+
+function setSliderDisplay(baseId, value, digits) {
+  const rangeEl = document.getElementById(baseId);
+  const numEl = document.getElementById(baseId + "Num");
+  rangeEl.value = value;
+  numEl.value = digits ? value.toFixed(digits) : value;
+  const min = parseFloat(rangeEl.min), max = parseFloat(rangeEl.max);
+  rangeEl.style.setProperty("--fill", ((value - min) / (max - min)) * 100 + "%");
+}
+
+function updateFieldValues(hp) {
+  el.customAsd.value = hp.asd;
+  el.customAsdHint.textContent = describeAsd(hp.asd);
+  setSliderDisplay("customSOpt", hp.sOpt, 0);
+  setSliderDisplay("customBeta", hp.beta, 2);
+  setSliderDisplay("customTgrowth", hp.tGrowthC, 0);
+  setSliderDisplay("customAUG", hp.startCodonDg.AUG, 3);
+  setSliderDisplay("customGUG", hp.startCodonDg.GUG, 3);
+  setSliderDisplay("customUUG", hp.startCodonDg.UUG, 3);
+}
+
+function applyLockState() {
+  const locked = !state.paramsUnlocked;
+  PARAM_INPUT_IDS.forEach((id) => { document.getElementById(id).disabled = locked; });
+}
+
+function updateLockBar(hp) {
+  if (state.paramsUnlocked) {
+    el.lockStatus.innerHTML = `🔓 <strong>Unlocked</strong> — editing ${state.customOrigin ? "a copy derived from " + state.customOrigin : hp.name}. Changes apply live.`;
+    el.lockToggleBtn.textContent = "Lock";
+    el.lockToggleBtn.onclick = () => { state.paramsUnlocked = false; syncParamsPanel(); };
+  } else if (state.customHostpack) {
+    el.lockStatus.innerHTML = `🔒 Locked — showing your <strong>custom values</strong>${state.customOrigin ? " (derived from " + state.customOrigin + ")" : ""}.`;
+    el.lockToggleBtn.textContent = "Customize…";
+    el.lockToggleBtn.onclick = openConfirm;
+  } else {
+    el.lockStatus.innerHTML = `🔒 Locked — showing <strong>${hp.name}</strong>'s published values.`;
+    el.lockToggleBtn.textContent = "Customize…";
+    el.lockToggleBtn.onclick = openConfirm;
+  }
+  el.lockToggleBtn.hidden = state.confirmPending;
+  el.confirmRow.hidden = !state.confirmPending;
+}
+
+function openConfirm() {
+  const hp = getActiveHostpack();
+  state.confirmPending = true;
+  el.confirmText.textContent = `Editing will detach these numbers from ${hp.name}'s data and switch the active profile to Generic/uncharacterized. Continue?`;
+  el.lockToggleBtn.hidden = true;
+  el.confirmRow.hidden = false;
+}
+
+function syncParamsPanel() {
+  const hp = getActiveHostpack();
+  renderCondensedChips(hp);
+  updateFieldValues(hp);
+  applyLockState();
+  updateLockBar(hp);
+  el.revertBtn.hidden = !state.customHostpack;
+}
+
+function bindSliderField(baseId, opts) {
+  const rangeEl = document.getElementById(baseId);
+  const numEl = document.getElementById(baseId + "Num");
+  const digits = opts.digits || 0;
+  function commit(value) {
+    if (Number.isNaN(value)) return;
+    const clamped = Math.min(opts.max, Math.max(opts.min, value));
+    const rounded = digits ? parseFloat(clamped.toFixed(digits)) : Math.round(clamped);
+    applyCustomEdit((hp) => opts.set(hp, rounded));
+  }
+  rangeEl.addEventListener("input", () => commit(parseFloat(rangeEl.value)));
+  numEl.addEventListener("change", () => commit(parseFloat(numEl.value)));
+  numEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { commit(parseFloat(numEl.value)); numEl.blur(); }
+  });
+}
+
+function wireAsdField() {
+  el.customAsd.addEventListener("input", () => {
+    const clean = sanitizeRNA(el.customAsd.value);
+    applyCustomEdit((hp) => { hp.asd = clean; });
+  });
+}
+
+el.paramsToggle.addEventListener("click", () => {
+  state.paramsExpanded = !state.paramsExpanded;
+  el.paramsBody.hidden = !state.paramsExpanded;
+  el.paramsToggle.setAttribute("aria-expanded", String(state.paramsExpanded));
+});
+el.confirmYes.addEventListener("click", () => {
+  state.confirmPending = false;
+  state.paramsUnlocked = true;
+  syncParamsPanel();
+});
+el.confirmNo.addEventListener("click", () => {
+  state.confirmPending = false;
+  syncParamsPanel();
+});
+el.revertBtn.addEventListener("click", () => {
+  state.customHostpack = null;
+  state.customOrigin = null;
+  state.paramsUnlocked = false;
+  renderSpeciesSummary();
+  updateGrowthTick();
+  updateCaveat();
+  syncParamsPanel();
+  scheduleRecompute();
+});
+
+wireAsdField();
+bindSliderField("customSOpt", { min: 0, max: 16, set: (hp, v) => { hp.sOpt = v; } });
+bindSliderField("customBeta", { min: 0.10, max: 0.90, digits: 2, set: (hp, v) => { hp.beta = v; } });
+bindSliderField("customTgrowth", { min: TEMP_MIN, max: TEMP_MAX, set: (hp, v) => { hp.tGrowthC = v; } });
+bindSliderField("customAUG", { min: -3, max: 2, digits: 3, set: (hp, v) => { hp.startCodonDg.AUG = v; } });
+bindSliderField("customGUG", { min: -3, max: 2, digits: 3, set: (hp, v) => { hp.startCodonDg.GUG = v; } });
+bindSliderField("customUUG", { min: -3, max: 2, digits: 3, set: (hp, v) => { hp.startCodonDg.UUG = v; } });
+
+/* ---- temperature rail ---- */
+function calibrationStatus(hp, tempC) {
+  const nearFit = Math.abs(tempC - 37) <= 3;
+  if (hp.calibration === "calibrated" && nearFit) return "calibrated";
+  const highTemp = tempC > 75 || (hp.uncertainty === "high" && tempC > 55);
+  if (highTemp) return "speculative";
+  return "prior";
+}
+function updateGrowthTick() {
+  const hp = getActiveHostpack();
+  const pct = (hp.tGrowthC - TEMP_MIN) / (TEMP_MAX - TEMP_MIN);
+  el.growthTick.style.left = `calc(9px + (100% - 18px) * ${pct})`;
+}
+function updateTempReadout() {
+  const rounded = Math.round(state.temperatureC * 10) / 10;
+  el.tempInput.value = rounded;
+  el.tempKelvin.textContent = (state.temperatureC + 273.15).toFixed(2) + " K";
+}
+function updateCaveat() {
+  const hp = getActiveHostpack();
+  const status = calibrationStatus(hp, state.temperatureC);
+  const label = status === "calibrated" ? "calibrated" : status === "prior" ? "prior" : "speculative";
+  el.calBadgeSlot.innerHTML = `<span class="badge ${status}" style="margin-left:8px;">${label}</span>`;
+
+  const farFromRef = Math.abs(state.temperatureC - 37) > 3;
+  if (status === "calibrated") {
+    el.betaCaveat.innerHTML = `<strong>β = ${hp.beta} mol/kcal</strong> is the fitted, published value for this host near 37°C — TIR is on calibrated footing here.`;
+  } else {
+    const reasons = [];
+    if (hp.calibration !== "calibrated") reasons.push("host coefficients (β, spacing curvature, standby) are an unfit <em>E. coli</em> prior");
+    if (farFromRef) reasons.push("temperature is far from the 37°C fit point");
+    if (status === "speculative") reasons.push("the nearest-neighbor model's neglect of heat-capacity effects becomes unreliable this far from 37°C");
+    const heading = status === "speculative" ? "Speculative regime" : "Uncalibrated regime";
+    el.betaCaveat.innerHTML = `<strong>${heading}:</strong> ${reasons.join("; ")}. ΔG terms scale correctly with temperature (van 't Hoff), but treat the resulting TIR as a <em>ranking</em> signal, not an absolute rate.`;
+  }
+  renderSpeciesSummary();
+}
+
+/* ---- SD:aSD ladder diagram (inline SVG) ---- */
+function buildLadderSVG(result, hp) {
+  const win = result.window;
+  const d = result.duplex;
+  const startInWindow = result.startInWindow;
+  const standbyStart = result.standby.start, standbyEnd = result.standby.end;
+
+  const displayStart = Math.max(0, Math.min(d.mrnaStart, standbyStart) - 1);
+  const displayEnd = Math.min(win.length, startInWindow + 3);
+  const chars = win.slice(displayStart, displayEnd).split("");
+  const n = chars.length;
+
+  const cw = 17; // char width
+  const leftPad = 46, rightPad = 14;
+  const width = leftPad + rightPad + cw * n;
+  const asdRowY = 108, mrnaRowY = 40, rungTop = mrnaRowY + 14, rungBottom = asdRowY - 12;
+  const height = 130;
+
+  const xAt = (winIdx) => leftPad + cw * (winIdx - displayStart) + cw / 2;
+
+  let svg = "";
+  svg += `<rect x="0" y="0" width="${width}" height="${height}" fill="none"/>`;
+
+  // region backdrops: standby, SD, spacer, start codon
+  function backdrop(fromIdx, toIdx, color, label, y, h) {
+    if (toIdx <= fromIdx) return "";
+    const x = xAt(fromIdx) - cw / 2;
+    const w = cw * (toIdx - fromIdx);
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${color}" />` +
+      `<text x="${x + w / 2}" y="${y - 4}" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" letter-spacing="0.04em" fill="currentColor" opacity="0.55">${label}</text>`;
+  }
+
+  if (standbyEnd > standbyStart) {
+    svg += backdrop(standbyStart, standbyEnd, "var(--bad-soft)", "STANDBY", mrnaRowY - 20, 26);
+  }
+  svg += backdrop(d.mrnaStart, d.mrnaEnd, "var(--accent-soft)", "SD", mrnaRowY - 20, 26);
+  svg += backdrop(startInWindow, startInWindow + 3, "var(--surface-2)", "START", mrnaRowY - 20, 26);
+
+  // mRNA row (top)
+  for (let i = displayStart; i < displayEnd; i++) {
+    const x = xAt(i);
+    const inSD = i >= d.mrnaStart && i < d.mrnaEnd;
+    const inStart = i >= startInWindow && i < startInWindow + 3;
+    const weight = inSD || inStart ? "600" : "400";
+    svg += `<text x="${x}" y="${mrnaRowY}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="14" font-weight="${weight}" fill="currentColor">${win[i]}</text>`;
+  }
+  svg += `<text x="6" y="${mrnaRowY}" text-anchor="start" font-size="9" font-family="IBM Plex Mono, monospace" fill="currentColor" opacity="0.5">5' UTR</text>`;
+
+  // pairing rungs + aSD row (bottom), aligned under their paired mRNA position
+  for (let i = d.mrnaStart; i < d.mrnaEnd; i++) {
+    const x = xAt(i);
+    const relIdx = i - d.mrnaStart;
+    const pairChar = d.antisdSegment[relIdx];
+    const mChar = win[i];
+    let colorVar = "var(--accent)", dash = "";
+    if (isWobble(mChar, pairChar)) { colorVar = "var(--hot)"; }
+    else if (!isWatsonCrick(mChar, pairChar)) { colorVar = "var(--bad)"; dash = "stroke-dasharray=\"2,2\""; }
+    svg += `<line x1="${x}" y1="${rungTop}" x2="${x}" y2="${rungBottom}" stroke="${colorVar}" stroke-width="2" ${dash}/>`;
+    svg += `<text x="${x}" y="${asdRowY}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="14" font-weight="600" fill="${colorVar}">${pairChar}</text>`;
+  }
+  svg += `<text x="6" y="${asdRowY}" text-anchor="start" font-size="9" font-family="IBM Plex Mono, monospace" fill="currentColor" opacity="0.5">anti-SD</text>`;
+
+  // overhang marker (unused 16S tail): a small dangling tick just left of
+  // the first paired base, rather than a label crammed into the margin --
+  // the full "N nt unengaged" statement lives in the figcaption below.
+  if (d.overhang > 0) {
+    const x = xAt(d.mrnaStart) - cw / 2;
+    svg += `<line x1="${x - 8}" y1="${asdRowY - 4}" x2="${x - 2}" y2="${asdRowY - 4}" stroke="currentColor" stroke-width="1.5" stroke-dasharray="1.5,2" opacity="0.45"/>`;
+  }
+
+  // spacer bracket between SD end and start codon
+  if (startInWindow > d.mrnaEnd) {
+    const x1 = xAt(d.mrnaEnd) - cw / 2 + 2, x2 = xAt(startInWindow) - cw / 2 - 2;
+    const y = mrnaRowY + 10;
+    svg += `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="currentColor" stroke-width="1" opacity="0.35"/>`;
+    svg += `<text x="${(x1 + x2) / 2}" y="${y + 12}" text-anchor="middle" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="currentColor" opacity="0.6">raw ${d.rawSpacing}nt · aligned ${d.alignedSpacing}nt (s_opt ${hp.sOpt})</text>`;
+  }
+
+  const caption = `SD "${d.mrnaSegment}" pairing anti-SD "${d.antisdSegment}" (${d.nWatsonCrick} Watson-Crick, ${d.nWobble} wobble, ${d.nMismatch} mismatch); ${d.overhang} nt of the 16S tail unengaged; aligned spacing ${d.alignedSpacing} nt against this host's optimum of ${hp.sOpt} nt.`;
+
+  return `<figure class="ladder-figure">
+    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${caption.replace(/"/g, '&quot;')}">${svg}</svg>
+    <figcaption>${caption}</figcaption>
+  </figure>`;
+}
+
+/* ---- diverging term bar chart ---- */
+function buildTermsChart(terms) {
+  const names = ["standby", "mRNA:rRNA", "spacing", "start", "stacking", "mRNA"];
+  const notes = {
+    standby: "cost of forcing the 4 nt upstream of the SD to stay unpaired (v1.0 method)",
+    "mRNA:rRNA": "SD : anti-SD hybridization free energy",
+    spacing: "penalty for aligned spacing deviating from this host's optimum",
+    start: "apparent fMet-tRNA : start-codon pairing energy",
+    stacking: "v2.1 homopolymer-spacer term — coefficient unpublished, not implemented",
+    mRNA: "−1 × MFE of the folded window (cost of disrupting competing structure)",
+  };
+  const maxAbs = Math.max(2, ...names.map((n) => Math.abs(terms[n])));
+  let html = "";
+  names.forEach((name) => {
+    const v = terms[name];
+    const pct = Math.min(50, (Math.abs(v) / maxAbs) * 50);
+    const side = v < 0 ? "neg" : "pos";
+    const styleLeft = v < 0 ? `left:${50 - pct}%; width:${pct}%;` : `left:50%; width:${pct}%;`;
+    html += `<div class="term-row">
+        <span class="tname">${name}</span>
+        <span class="diverge"><span class="zero" style="left:50%;"></span><span class="fill ${side}" style="${styleLeft}"></span></span>
+        <span class="tval ${side}">${fmtSigned(v)}</span>
+      </div>
+      <div class="term-note">${notes[name]}</div>`;
+  });
+  return html;
+}
+
+/* ---- render candidate strip + detail ---- */
+function renderResults(result) {
+  const hp = getActiveHostpack();
+  const scored = result.results.filter((r) => !r.leaderless).sort((a, b) => b.rate - a.rate);
+  const leaderless = result.results.filter((r) => r.leaderless);
+
+  if (state.selectedIndex === null || !scored.find((r) => r.index === state.selectedIndex)) {
+    state.selectedIndex = scored.length ? scored[0].index : null;
+  }
+
+  const maxRate = scored.length ? scored[0].rate : 1;
+  el.candidateStrip.innerHTML = "";
+  scored.forEach((r) => {
+    const card = document.createElement("div");
+    card.className = "candidate" + (r.index === state.selectedIndex ? " selected" : "");
+    const barPct = Math.max(3, (r.rate / maxRate) * 100);
+    card.innerHTML = `
+      <div class="pos">pos ${r.index}</div>
+      <div class="codon mono">${r.codon}</div>
+      <div class="dg mono">ΔG ${fmtSigned(r.total)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${barPct}%"></div></div>`;
+    card.addEventListener("click", () => { state.selectedIndex = r.index; renderResults(result); });
+    el.candidateStrip.appendChild(card);
+  });
+
+  if (!scored.length) {
+    el.detailMount.innerHTML = `<div class="empty-state">No SD-like sequence found upstream of any AUG/GUG/UUG in this sequence — every candidate start is leaderless for this host's anti-SD tail.</div>`;
+  } else {
+    const r = scored.find((x) => x.index === state.selectedIndex) || scored[0];
+    el.detailMount.innerHTML = `
+      <div class="detail">
+        <div class="detail-head">
+          <div class="headline">
+            <span class="rate tnum">${fmtRate(r.rate)}</span>
+            <span class="rate-unit">TIR, proportional units — r = exp(−β·ΔG_total)</span>
+          </div>
+          <div class="loc-tag">codon <b>${r.codon}</b> at position ${r.index}<br>window [${r.windowStart}, ${r.windowEnd})</div>
+        </div>
+        <div class="headline">
+          <span class="dg-total">ΔG_total = <b>${fmtSigned(r.total)}</b> kcal/mol</span>
+          <span class="dg-total" title="The K·exp(−ΔG/RT_eff) scale the rest of the Operon Calculator (coupling, HTISC, design) threads through. Never compare this number to the proportional TIR above.">v1-style (au) = <b>${fmtRate(r.rateV1)}</b></span>
+        </div>
+        <div>
+          <div class="section-label">Free-energy decomposition</div>
+          <div class="terms-chart">${buildTermsChart(r.terms)}</div>
+        </div>
+        <div>
+          <div class="section-label">SD : anti-SD alignment</div>
+          ${buildLadderSVG(r, hp)}
+        </div>
+      </div>`;
+  }
+
+  if (leaderless.length) {
+    el.leaderlessMount.innerHTML = `<div class="leaderless-list">
+      <span>Leaderless (no SD-like match, excluded from ranking):</span>
+      ${leaderless.map((r) => `<span class="lchip">${r.codon}@${r.index}</span>`).join("")}
+    </div>`;
+  } else {
+    el.leaderlessMount.innerHTML = "";
+  }
+}
+
+/* ---- main recompute ---- */
+function recompute() {
+  const raw = el.sequence.value;
+  const clean = sanitizeRNA(raw);
+  el.seqLen.textContent = `${clean.length} nt`;
+  const stripped = raw.replace(/\s|\d/g, "");
+  el.seqWarn.textContent = stripped.length !== clean.length ? "non-ACGTU characters ignored" : "";
+
+  if (clean.length < 6) {
+    el.candidateStrip.innerHTML = "";
+    el.detailMount.innerHTML = `<div class="empty-state">Enter at least a few nucleotides of mRNA sequence to see live predictions.</div>`;
+    el.leaderlessMount.innerHTML = "";
+    return;
+  }
+
+  const result = predict(clean, getActiveHostpack(), state.temperatureC);
+  renderResults(result);
+}
+
+let debounceTimer = null;
+function scheduleRecompute() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(recompute, 120);
+}
+
+/* ---- wire up ---- */
+el.sequence.value = EXAMPLE_SEQUENCE;
+el.exampleBtn.addEventListener("click", () => { el.sequence.value = EXAMPLE_SEQUENCE; recompute(); });
+el.sequence.addEventListener("input", scheduleRecompute);
+
+function setTemperature(value) {
+  if (Number.isNaN(value)) return;
+  const clamped = Math.min(TEMP_MAX, Math.max(TEMP_MIN, value));
+  state.temperatureC = clamped;
+  el.tempSlider.value = clamped;
+  updateTempReadout();
+  updateCaveat();
+  scheduleRecompute();
+}
+
+el.tempSlider.addEventListener("input", () => setTemperature(parseFloat(el.tempSlider.value)));
+el.tempInput.addEventListener("change", () => setTemperature(parseFloat(el.tempInput.value)));
+el.tempInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { setTemperature(parseFloat(el.tempInput.value)); el.tempInput.blur(); }
+});
+el.resetTemp.addEventListener("click", () => setTemperature(getActiveHostpack().tGrowthC));
+
+el.speciesSelect.addEventListener("change", () => selectSpecies(el.speciesSelect.value));
+
+let searchDebounce = null;
+el.speciesSearch.addEventListener("input", () => {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(runSpeciesSearch, 120);
+});
+el.speciesSearch.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); runSpeciesSearch(); }
+});
+
+populateSpeciesSelect();
+renderSpeciesSummary();
+syncParamsPanel();
+updateGrowthTick();
+updateTempReadout();
+updateCaveat();
+recompute();
+</script>

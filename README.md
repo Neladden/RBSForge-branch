@@ -24,6 +24,8 @@ subpackages implement against.
 ```
 rbsforge/                       RBS Calculator recreation (TIR engine; Predict mode)
   docs/MODEL.md                 RBSForge's own free-energy model doc
+  docs/HOSTPACK_DECODER.md      draft design doc: predicting HostPacks from a genome embedding
+  web/rbsforge-console.html     live, in-browser demo (self-contained, no build step)
 
 operon/                         everything else in the Operon Calculator
   core/                         shared types (OperonHost, CDS, Operon, Assembled)
@@ -85,6 +87,9 @@ Command line:
 ```
 python -m rbsforge.cli "AGGAGG...ATGAAACGC..." --species ecoli --temperature 37
 ```
+
+Live demo: open `rbsforge/web/rbsforge-console.html` directly in a browser
+for an interactive version — no server, no build step.
 
 See `rbsforge/docs/MODEL.md` for the full formula set, citations, and —
 important — the limitations around what's calibrated (*E. coli*, ~37 C)
