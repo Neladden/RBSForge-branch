@@ -1,0 +1,80 @@
+# rbsforge
+
+The translation-initiation-rate (TIR) engine: reimplements Predict mode of
+the Salis Lab RBS Calculator from the published v1.0-v2.1 papers plus the
+public v1.0 GPL source. **Status: implemented.** This is the one module
+every other `operon.*` subpackage that touches translation calls into.
+
+Read `docs/MODEL.md` (in this directory) for the full formula set and
+citations before changing anything here. Read the top-level
+`docs/OPERON_CALCULATOR_SPEC.md` section 4 ("RBSForge as the TIR engine")
+for how the rest of the Operon Calculator depends on this package's exact
+API and TIR scale.
+
+## Public API
+
+```python
+from rbsforge import predict, RBSCalculator, HostPack, get_hostpack
+result = predict(mrna_sequence, species="ecoli", temperature_c=37.0)
+```
+
+`PredictResult.results` is a `List[StartCodonResult]`; `.best` and
+`.ranked()` exclude leaderless starts. See `docs/MODEL.md` for the full
+field list.
+
+## Load-bearing constraints — do not change without reading the spec first
+
+- **`beta` is an empirical fit, not `1/RT`.** Only the `ecoli` HostPack at
+  ~37 C is calibrated. Every other built-in HostPack inherits
+  `beta`/spacing/standby from the *E. coli* fit as a documented *prior*
+  (rankings are defensible; absolute TIR is not). Don't "fix" a non-ecoli
+  HostPack's absolute output without a real calibration library (spec
+  section 4.1, `docs/MODEL.md`'s "Beta is not portable" section).
+- **TIR scale is frozen at `v1_style_rate`** (`2500 * exp(-dG/2.222)`) for
+  everything downstream that thresholds or mixes rates (HTISC, coupling,
+  design). `translation_initiation_rate` (the `exp(-beta*dG)` proportional
+  scale) exists but must never be compared against `v1_style_rate` or
+  against published occupancy constants like Tian's `C=0.81` — see spec
+  section 4.5 and known failure mode 10/12.
+- **`delta_G_stacking = 0.0` is deliberate.** The v2.1 coefficient was
+  never published. Do not invent one.
+- **`HostPack.footprint_cds = 13` is currently unused.** The calculator
+  folds an unconstrained window and reports `-MFE` as the entire
+  unfolding penalty; it does not yet do the two-fold bound-state
+  constrained fold spec section 6 describes. This is the single highest-
+  leverage change for `operon.coupling` to become buildable — see
+  `operon/coupling/CLAUDE.md`. If you implement it, follow spec section
+  6.2/6.5/Appendix B exactly (one shared `predict_one(mrna, start,
+  extra_unpaired_global=None)` hook — coupling and footprint must not
+  grow two parallel constrained-fold code paths).
+- **v2.0 standby (`StandbyParams` on `HostPack`) is scaffolded, not
+  wired.** Only the v1.0 4-nt forced-unpaired form is implemented. Do not
+  ship both v1.0 and v2.0 additively if you wire this in (spec section
+  19, 23).
+- **No dependency on ViennaRNA is required.** The builtin folder
+  (`thermo/fold.py`) is a from-scratch nested-helix folder (no bulges,
+  internal loops, or multiloops) — conservative, fine for ranking isolated
+  RBS strength, *not* fine for coupling-relevant intergenic hairpins.
+  `RNAfold` is used automatically if on `PATH`. Any module that needs
+  accurate structure for bulge-containing hairpins (coupling) must check
+  `folder.backend == "vienna"` and refuse or warn otherwise, not silently
+  fall back to the builtin folder.
+
+## What this package will never do (by design, not by gap)
+
+No mRNA-stability sidecar, no promoter prediction, no terminator model, no
+codon recoding, no Design mode (inverse RBS design). Those belong in
+`operon.*` subpackages and call into this one; do not add them here.
+`design_rbs` in particular is planned in `operon/design/`, calling
+`rbsforge.predict` as its energy oracle — see `operon/design/CLAUDE.md`.
+
+## Tests
+
+```
+python -m unittest discover -s tests -p 'test_*.py'
+```
+(from the repo root — `tests/` is shared across the whole repo, not
+per-subpackage; files here are named after what they cover:
+`test_calculator.py`, `test_duplex.py`, `test_hostpack.py`,
+`test_nn_params.py`, `test_spacing.py`, `test_standby.py`,
+`test_start_codons.py`.)
