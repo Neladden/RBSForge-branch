@@ -64,15 +64,16 @@ guess.
   section 4.5 and known failure mode 10/12.
 - **`delta_G_stacking = 0.0` is deliberate.** The v2.1 coefficient was
   never published. Do not invent one.
-- **`HostPack.footprint_cds = 13` is currently unused.** The calculator
-  folds an unconstrained window and reports `-MFE` as the entire
-  unfolding penalty; it does not yet do the two-fold bound-state
-  constrained fold spec section 6 describes. This is the single highest-
-  leverage change for `operon.coupling` to become buildable — see
-  `operon/coupling/CLAUDE.md`. If you implement it, follow spec section
-  6.2/6.5/Appendix B exactly (one shared `predict_one(mrna, start,
-  extra_unpaired_global=None)` hook — coupling and footprint must not
-  grow two parallel constrained-fold code paths).
+- **`HostPack.footprint_cds = 13` is wired in** via
+  `RBSCalculator.predict_one(mrna, start, extra_unpaired_global=None)`
+  (spec section 6.2/6.5/Appendix B): the `mRNA` breakdown term is now the
+  bound-state unfolding cost `E_bound - E_initial` (start codon +
+  `footprint_cds` nt forced unpaired), not the old blanket
+  `-1 * unconstrained MFE`. `predict()` calls this for every start codon
+  it finds — there is exactly one constrained-fold code path. `operon.coupling`
+  reuses this same method via `extra_unpaired_global` (the upstream CDS's
+  nucleotides that fall in the downstream start's window) — do not add a
+  second, parallel constrained-fold mechanism there.
 - **v2.0 standby (`StandbyParams` on `HostPack`) is scaffolded, not
   wired.** Only the v1.0 4-nt forced-unpaired form is implemented. Do not
   ship both v1.0 and v2.0 additively if you wire this in (spec section

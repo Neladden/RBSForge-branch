@@ -2,11 +2,11 @@
 
 A from-scratch recreation of the Salis Lab Operon Calculator: an assembler,
 a translation-initiation-rate (TIR) engine, a translational-coupling model,
-and a set of independent scanners/recoders for everything else a multi-CDS
-bacterial operon needs — codon optimization, mRNA stability, cryptic
+and a set of independent scanners/recoders for a multi-CDS bacterial
+operon's other concerns — codon optimization, mRNA stability, cryptic
 promoters, internal terminators, ribosomal pause sites, repeats, and
 synthesis/restriction-site constraints — composed behind one assembler and
-(eventually) one multi-objective design search.
+a multi-objective (NSGA-II) design search.
 
 **RBSForge is one module of this project, not the whole of it.** It is the
 Predict-mode TIR engine (`rbsforge/`) that the rest of the stack calls as
@@ -53,17 +53,15 @@ tests/
 
 ## Status
 
-| Module | What | Status |
-|---|---|---|
-| RBSForge | TIR engine (Predict mode) | implemented |
-| `operon.core` | shared types | implemented |
-| `operon.promoter_calculator` (Module E) | sigma70 promoter scan | implemented |
-| everything else under `operon/` | see table above | prepared subsection, not yet implemented |
-
-The promoter calculator is the current focus — a from-scratch, dependency-
-free reimplementation of the 346-parameter LaFleur, Hossain & Salis (2022)
-linear free-energy model for sigma70 transcription rate. See
-`operon/promoter_calculator/docs/MODEL.md`.
+Every module — RBSForge and all of `operon/` — is implemented with real
+tests (`python -m unittest discover -s tests`, ~190 tests). "Implemented"
+doesn't mean "spec-complete": most modules have a documented scope
+boundary (a placeholder codon-usage table, a presence-only terminator
+scan standing in for a trained classifier, an mRNA-stability module that
+computes real features but won't invent unpublished fit coefficients for
+the final rate). See `docs/OPERON_CALCULATOR.md`'s module status table
+and each subpackage's own `CLAUDE.md` for exactly what's real vs. a
+documented placeholder before trusting a number from it.
 
 ## RBSForge
 
@@ -122,6 +120,28 @@ step; same design and JS-port approach as the RBSForge console above.
 
 See `operon/promoter_calculator/docs/MODEL.md` for the formula set,
 citations, and calibration notes.
+
+## Design mode
+
+Inverse RBS design (a v1.0-style simulated annealer against
+`rbsforge.predict`) and a Pareto (NSGA-II) search over RBS nucleotides
+and synonymous codon choices, built from the other modules above:
+
+```python
+from operon.design import design_rbs, design
+from operon.design.objectives import tir_error_objective, repeat_length_objective, synthesis_feasibility_constraint
+
+result = design_rbs(cds_nt, target_tir=1000.0, hostpack=hostpack)
+print(result.rbs, result.predicted_tir, result.hit_tol)
+
+objectives = [tir_error_objective({"geneA": 1000.0}, calc), repeat_length_objective()]
+constraints = [synthesis_feasibility_constraint()]
+pareto_front = design(operon, calc, objectives, constraints)  # list[Design], non-dominated
+```
+
+See `operon/design/CLAUDE.md` for what's mono-cistronic vs. coupling-
+aware, and why a seed `Operon` that already violates a hard constraint
+poisons the whole search.
 
 ## Install (dev)
 

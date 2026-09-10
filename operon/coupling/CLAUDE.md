@@ -1,61 +1,51 @@
 # operon.coupling — Module B
 
 Translational coupling: the only translation physics not already in
-RBSForge. **Status: prepared subsection, not implemented — and currently
-blocked.** Spec section 7, source Tian & Salis, NAR 2015
-(https://doi.org/10.1093/nar/gkv635).
+RBSForge. **Status: implemented.** Spec section 7, source Tian & Salis,
+NAR 2015 (https://doi.org/10.1093/nar/gkv635).
 
-## Blocked on two prerequisites — check both before starting
+## Load-bearing constraints
 
-1. **`rbsforge.RBSCalculator` must expose `predict_one(mrna, start,
-   extra_unpaired_global=None)`.** It does not yet (see
-   `rbsforge/CLAUDE.md`). Coupling's de novo term needs two calls to it
-   per downstream CDS — one folded, one with the upstream CDS's
-   nucleotides forced unpaired — and both must go through the *same*
-   constrained-fold code path CDS-footprint unfolding uses (spec section
-   6.5). Do not build a second, coupling-only constrained-fold mechanism.
-2. **Vienna (`RNAfold` on `PATH`) is required, not optional, when this
-   module is on.** The builtin folder cannot represent bulge-containing
-   intergenic hairpins; running coupling on it under-stabilizes
-   inhibitory helices and flattens the sigmoid (known failure mode 11).
-   Refuse or warn if `folder.backend != "vienna"` rather than silently
-   producing a wrong answer.
+- **`require_vienna=True` is the default and raises `RuntimeError` if
+  `calc.folder.name != "vienna"`.** The builtin folder cannot represent
+  bulge-containing intergenic hairpins; running coupling on it under-
+  stabilizes inhibitory helices and flattens the sigmoid (known failure
+  mode 11). `require_vienna=False` only warns and proceeds — that path
+  exists for tests/development in environments without `RNAfold` on
+  `PATH` (this repo's own test suite uses it that way, since the sandbox
+  this was built in has no Vienna installed); never use it to produce
+  numbers anyone will actually trust.
+- `to_physical(rate_au, host)` **is the identity function, deliberately.**
+  The spec is explicit that the au->s^-1 conversion is absorbed into a
+  properly re-fit `host.c_unfold`, not a separately-published formula —
+  inventing one here would silently double-convert. Don't add a
+  conversion formula to this function without a cited source.
+- `host.c_unfold` (`C`) and `host.k_p` still default to Tian's published
+  values (0.81, 10) as an unfit prior — re-fit both before trusting an
+  absolute coupled TIR (see `operon/core/CLAUDE.md`). `k_reinitiation(d)`
+  is the one piece that transfers across au scales as-is; don't touch it
+  without a reason from the spec.
+- `extra_unpaired_global` passed to `predict_one` for the "unfolded"
+  score is **the upstream CDS's entire span**
+  (`range(assembled.starts[i-1], assembled.cds_end[i-1])`), not just a
+  window near its stop — `predict_one` clips it to whatever falls inside
+  the downstream start's own folded window itself (spec Appendix C: "every
+  index < start_i that is part of CDS_{i-1}... clipped to the window").
+  Don't pre-clip it here; that duplicates logic `predict_one` already owns.
+- Leaderless downstream start -> de novo term is exactly `0`, keeping
+  only `r_reinit` (`LeaderlessCouplingError` is only raised for a
+  leaderless *first* CDS, where there is nothing to couple from at all —
+  a downstream leaderless start is a normal, real architecture, not an
+  error).
+- There is no closed-form inverse of this module — `operon.design` must
+  sample-and-score across junctions, never invert `coupled_tirs` (spec
+  section 7.5).
 
-## The model, once unblocked
+## Tests
 
-```
-r_1 = predict_one(mrna, start_1).tir                      # no coupling
-r_reinit_i = host.k_p * k_reinitiation(d) * r_{i-1}        # k_reinitiation already implemented, see below
-f = min(1, host.c_unfold * to_physical(r_{i-1}, host))
-r_denovo_i = (1-f) * r_folded + f * r_unfolded
-r_i = r_reinit_i + r_denovo_i
-```
-
-- `k_reinitiation(d)` **is already implemented** in `__init__.py` — it's
-  a ratio and transfers across au scales unchanged, unlike `c_unfold`/
-  `k_p`, which do not (see below). Don't touch it without a reason from
-  the spec.
-- `host.c_unfold` (`C`) and `host.k_p` default to Tian's published
-  values (0.81, 10) as a prior. **Re-fit both before trusting an absolute
-  coupled TIR** — they mix physical ribosome occupancy with whichever au
-  scale RBSForge outputs, and Tian's values were fit on a different
-  scale. `k_reinitiation(d)` is the one piece that transfers as-is.
-- If the downstream start is leaderless, `r_folded` is undefined: treat
-  de novo as `0` and keep only re-initiation (a real SD-less overlapping
-  architecture) — never substitute `TIR = 0` for a leaderless start
-  (known failure mode 14).
-- There is no closed-form inverse of this module. Do not build one for
-  `operon.design` — coupling-aware design is sample-and-score (spec
-  section 18), not inversion (spec section 7.5, "do not invert coupling").
-- Iterate 5' to 3', using each step's *already-coupled* `r_{i-1}`, not
-  the mono-cistronic prediction — this is why changing an upstream RBS
-  can make a downstream RBS "disappear" in Evaluate mode (spec section
-  7.3's note, known failure mode 1 is the promoter-DNA-vs-mRNA version of
-  the same mistake).
-
-## Interface to build toward
-
-```python
-def k_reinitiation(d: int) -> float: ...   # already implemented
-def coupled_tirs(assembled, host, calc) -> list[float]: ...
-```
+`tests/test_coupling.py`: `k_reinitiation`'s published fixed points and
+interpolation shape, the Vienna-required refuse/warn behavior, first-CDS
+mono-cistronic equivalence, `d=-4` vs. insulating `d=-25` producing a
+measurably larger re-initiation leak, both leaderless cases (first CDS
+raises, downstream CDS keeps only re-init), and a trivial single-CDS
+operon.

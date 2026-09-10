@@ -77,7 +77,9 @@ class Operon:
     rbs_list: List[str]
     terminator_dna: str
     host: OperonHost
-    intergenic_policy: str = "free"  # 'overlap-4' | 'overlap-1' | 'abut' | 'spacer-N' | 'free'
+    intergenic_policy: str = "free"  # 'overlap-N' | 'abut' | 'spacer-N' | 'free' -- see operon/assembly/CLAUDE.md
+    tss: Optional[int] = None  # 0-based index into promoter_dna where transcription starts;
+                                # None defaults to len(promoter_dna) (mRNA begins right after the promoter)
 
 
 @dataclass
@@ -86,3 +88,5 @@ class Assembled:
     mrna: str                 # T -> U from TSS to terminator end
     features: List[Dict]      # [{id, type, start, end, strand}]
     junctions: List[Junction]
+    starts: List[int] = field(default_factory=list)    # each CDS's start codon, 0-based on mrna; spec section 7.3's assembled.starts
+    cds_end: List[int] = field(default_factory=list)   # each CDS's stop-codon-end (exclusive), 0-based on mrna; spec section 7.3's assembled.cds_end

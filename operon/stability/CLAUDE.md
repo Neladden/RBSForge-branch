@@ -1,20 +1,13 @@
 # operon.stability — Module D
 
-mRNA stability / decay rate prediction. **Status: prepared subsection,
-not implemented.** Spec section 9. RBSForge explicitly does not include
-this — it is entirely this module's responsibility. Consumes coupled
-TIRs from `operon.coupling` as ribosome-protection inputs, but is
-otherwise independent.
+mRNA stability / decay rate prediction. **Status: features implemented
+(dx, RNase-accessibility score, 5' hairpin detection); the final fitted
+rate is deliberately gated on real coefficients.** Spec section 9.
+RBSForge explicitly does not include this — it is entirely this module's
+responsibility. Consumes coupled TIRs from `operon.coupling` as
+ribosome-protection inputs, but is otherwise independent.
 
-## Implement the 2021 biophysical model first, not the 2024 GBDT
-
-Spec section 9.2 (2021, Cetnar & Salis,
-https://doi.org/10.1021/acssynbio.0c00471) is the model to build first —
-two interpretable features, one linear fit. Spec section 9.3 (2024,
-isoform-aware LightGBM, https://doi.org/10.1038/s41467-024-54059-7) is a
-later layer that additionally depends on `operon.promoter_calculator`
-(for isoform/TSS selection) and is not a prerequisite for a working
-Module D.
+## Why `mrna_stability` can return `k_decay=None`
 
 ```
 dx = r_elong / r_init - L_footprint          # nt of naked mRNA between ribosomes
@@ -24,14 +17,40 @@ k_decay   = k0 * exp(b1*RNase_score + b2*dx)
 t_half    = ln(2) / k_decay
 ```
 
-- `{a, b}` **must be fit on a paired sequence/qPCR set** — the 2021
-  paper's 82-operon set is the calibration target. This function is not
-  usable with made-up coefficients; don't ship a plausible-looking
-  default.
-- For multi-cistronic operons, weight `dx` toward the 5' cistron (or use
-  the minimum protection across cistrons) — the least-translated cistron
-  is the RNase entry point, not a length-weighted average across all of
-  them equally.
+`dx` (`ribosome_protection_dx`) and `RNase_score`
+(`rnase_accessibility_score`) are implemented for real — both are
+physically-grounded and need no fitted data beyond `host.r_elong_nominal_nt_s`/
+`host.ribosome_footprint_nt` (already on `OperonHost`) and a fold. The
+final `log(mRNA)`/`k_decay` combination is **not** wired to a default
+`{a, b}` — the spec is explicit that those must be fit on a real paired
+sequence/qPCR set (the 2021 paper's 82-operon set is the calibration
+target), and this repo's convention is not to invent coefficients that
+were never published. `mrna_stability(..., coefficients=None)` (the
+default) returns only the features; pass a real fit as
+`coefficients={"a0":..., "a1":..., "a2":..., "a3":..., "k0":..., "b1":...,
+"b2":...}` to get `k_decay`/`t_half` back. **Never add a
+`DEFAULT_COEFFICIENTS` dict to this module** — `tests/test_stability.py`
+has a regression test (`test_never_invents_coefficients_of_its_own`)
+checking exactly that name doesn't appear in the source; if you have a
+real fit, wire it through a `HostPack`/`OperonHost` field or a caller-
+supplied argument, not a hardcoded module-level default.
+
+- `ribosome_protection_dx` converts au TIR via `operon.coupling.to_physical`
+  — the same documented identity seam, same reasoning (no published
+  au -> s^-1 formula exists). Keep both in sync if that seam ever changes.
+- `rnase_accessibility_score`'s per-base weights (`_RNASE_MOTIF_WEIGHT`:
+  A/U=1.0, G/C=0.3) are directionally motivated by the paper's own
+  finding (AU-rich unpaired tracts destabilize, GC protects), not a
+  fitted table — same honesty tier as `operon.elongation`'s placeholder
+  codon weights, not a source of real absolute scores.
+- Multi-cistronic aggregation uses the **minimum** `dx` across cistrons
+  (`StabilityResult.per_cistron_dx` has every cistron's value if you need
+  the length-weighted-average alternative instead) — the least-
+  translated cistron is the RNase entry point, spec section 9.2's stated
+  preference.
+- Spec section 9.3's 2024 isoform-aware LightGBM layer (needs
+  `operon.promoter_calculator` for TSS/isoform selection) is a later,
+  separate expansion, not a prerequisite for this module.
 
 ## The one rule that matters most here
 

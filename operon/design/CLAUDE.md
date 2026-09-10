@@ -2,12 +2,19 @@
 
 Two related but separable pieces: inverse RBS design (`design_rbs`, spec
 section 5, Appendix A) and the multi-objective operon-level search
-(`design`, spec section 18). **Status: prepared subsection, not
-implemented.** This is the last module in the spec's implementation order
-(section 20, steps 6 and 14) for good reason — build everything else
-first.
+(`design`, spec section 18). **Status: both implemented.** This was the
+last module in the spec's implementation order (section 20, steps 6 and
+14) for good reason — everything else was built first.
 
-## `design_rbs` — build this one first, it only needs `rbsforge.predict`
+## `design_rbs` — implemented in `design_rbs.py`
+
+Verified across the full realistic TIR range (10 to 50,000 au) in
+`tests/test_design_rbs.py`: every case there converges (`hit_tol=True`,
+objective <= 0.25 kcal/mol) within a few thousand evaluations at most,
+usually far fewer. `dg_target_from_tir` uses RBSForge's own
+`V1_LOG_K`/`RT_EFF_DEFAULT` constants and the *host's own* `beta`
+(`RT_eff = 1/beta`) rather than hardcoding 2.222, so it isn't silently
+*E. coli*-only the way a literal `2.222` in the formula would be.
 
 A v1.0-style simulated annealer (Salis, Mirsky & Voigt 2009,
 https://doi.org/10.1038/nbt.1568; Salis 2011 section 4.4 for IUPAC) that
@@ -34,6 +41,12 @@ init, `rbs_max_len = 35` (from `HostPack.rbs_max_len`).
 appearing inside the RBS, the intended start scoring leaderless, length
 outside `rbs_len_range`/`rbs_max_len`.
 
+`DesignResult.predicted_tir` is `v1_style_rate`, not
+`translation_initiation_rate` — `dG_target` was derived by inverting the
+`v1_style_rate` formula (`K * exp(-dG/RT_eff)`), so that's the scale that
+actually matches `target_tir` apples-to-apples. Don't switch it to the
+proportional scale without also changing `dg_target_from_tir`.
+
 **Explicitly skip** (spec section 5.3's table): `kinetic_score`/
 `three_state_indicator` guards (RBSForge doesn't compute the folding-
 kinetics quantities they need — don't fake them) and helical-loop repair
@@ -54,7 +67,41 @@ inside `design()`'s inner loop, spec section 5.8 gives one: plant
 `AGGAGG` at `s_opt`, randomize the rest of a 35-mer inside the IUPAC
 mask, and let the outer GA move it from there.
 
-## `design` — the outer Pareto search
+## `design` (NSGA-II) — implemented in `nsga2.py`; ready-made objectives in `objectives.py`
+
+The engine (`design()`) is objective-agnostic — it takes
+`objectives: List[Callable[[Operon, Assembled], float]]` (minimize) and
+`constraints: List[Callable[[Operon, Assembled], bool]]` (True =
+satisfied) and runs standard NSGA-II (fast non-dominated sort +
+crowding-distance selection + constrained dominance: feasible always
+beats infeasible, fewer constraint violations wins among infeasible
+individuals) over them. `objectives.py` has ready-made ones built from
+the now-implemented modules — `tir_error_objective`,
+`repeat_length_objective`, `htisc_count_objective`,
+`synthesis_feasibility_constraint`, `protein_sequence_constraint` — so
+`design()` is demonstrably usable end to end against real scanners, not
+just an abstract shell (see `tests/test_design_nsga2.py`).
+
+**A seed `Operon` that already violates a hard constraint you're
+searching under poisons the whole run.** Elitism (`combined = population
++ offspring`, then non-dominated sort) means a feasible individual, once
+found, persists across generations — but if the *seed* and every early
+mutation of it are infeasible (e.g. a homopolymer run already in the
+seed RBS), the search may never find a feasible individual in a short
+run at all, and `design()` will then return infeasible designs in "front
+0" (they're still non-dominated *among infeasible individuals*). This
+bit an early version of this module's own test suite — the seed's RBS
+had a 15-nt run of A's, silently failing `synthesis_feasibility_constraint`
+from generation 0. Start from a feasible seed.
+
+`tir_error_objective` is mono-cistronic (`calc.predict_one` per CDS, not
+`operon.coupling`) by default — cheap and Vienna-independent, which
+matters inside a GA loop that may call it hundreds of times. A caller
+who needs a coupling-aware TIR objective should build one around
+`operon.coupling.coupled_tirs` themselves; wiring that in as the default
+would make every `design()` call require Vienna.
+
+## `design` — the outer Pareto search, general design notes
 
 **NSGA-II (or another Pareto GA), never a weighted-sum scalarization.**
 The spec is explicit about why (section 18.2, known failure mode 9): a

@@ -1,9 +1,33 @@
 # operon.synthesis — Module J
 
 DNA synthesis complexity and restriction-site constraints. **Status:
-prepared subsection, not implemented.** Spec section 15. Source: Halper,
-Hossain & Salis 2020 (https://doi.org/10.1021/acssynbio.9b00460,
-Synthesis Success Calculator).
+implemented** for the section 15.1 numeric hard-rule table and the RE-
+site hard constraint. Source: Halper, Hossain & Salis 2020
+(https://doi.org/10.1021/acssynbio.9b00460, Synthesis Success
+Calculator).
+
+## Not implemented — deliberately out of scope so far
+
+- Hairpin/GC-rich/terminal-hairpin detection, G-quadruplex, and i-motif
+  motifs (section 15.1's last few rows) are not implemented. They need
+  either folding (RBSForge's folder) or dedicated motif detectors this
+  pass didn't build — don't assume `synthesis_score` catches them.
+- The trained random-forest `P(synthesis success)` refinement (SSC's own
+  headline result, F1 0.928) is not implemented; see below.
+- `_repeat_density_hits` reuses `operon.repeats.find_repeats`, whose
+  direct/inverted hits are seed(k)-length, not extended (see
+  `operon/repeats/CLAUDE.md`) — density estimates here are therefore
+  conservative (a real, longer repeat is undercounted), not exact.
+
+## A gotcha already fixed once — don't reintroduce it
+
+A run of a single repeated base trivially satisfies *any* period's
+tandem recurrence (`seq[j] == seq[j-period]` holds for constant regions
+regardless of `period`). `_tandem_hits` explicitly skips a period-2/3
+"unit" that's actually just one repeated character (`len(set(unit)) ==
+1`) so a long homopolymer isn't double-reported as a dinucleotide *and*
+trinucleotide tandem violation on top of its own homopolymer hit. If you
+touch `_tandem_hits`, keep that guard.
 
 ## Start with the hard rules, not the trained forest
 

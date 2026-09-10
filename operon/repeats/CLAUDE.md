@@ -1,10 +1,24 @@
 # operon.repeats — Module I
 
 Repeat finding (>=12 bp) plus transposon-insertion / phage att-site
-motif scanning. **Status: prepared subsection, not implemented.** Spec
-section 14. Source: Hossain et al. 2020
-(https://doi.org/10.1038/s41587-020-0584-2, Nonrepetitive Parts
-Calculator).
+motif scanning. **Status: implemented.** Spec section 14. Source:
+Hossain et al. 2020 (https://doi.org/10.1038/s41587-020-0584-2,
+Nonrepetitive Parts Calculator).
+
+## What "implemented" means here — a deliberate scope boundary
+
+`find_repeats`'s direct/inverted hits are reported at **seed (k-mer)
+length, not maximally extended**. Two 12-mer-identical loci that actually
+share 20 identical bp are reported as a 12 bp hit, not a 20 bp one.
+Extending each seed to its true maximal match (the "extend, merge
+overlapping" part of spec section 14.1) is a real follow-up, not done —
+don't assume `RepeatHit.length` is the true shared-sequence length for
+direct/inverted hits; it's always exactly `k`. Tandem/terminal hits
+*are* reported at their true span (they come from an independent
+run-length scan, not the k-mer index), and periods are capped at 6
+(homopolymer through hexanucleotide) — longer-period tandem structure
+falls through to the direct-repeat scan instead once its span reaches
+`k`.
 
 ## `find_repeats`
 

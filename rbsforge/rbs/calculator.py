@@ -60,6 +60,7 @@ class StartCodonResult:
     standby_window: Optional[tuple] = None
     window_start: int = 0
     window_end: int = 0
+    footprint_span: Optional[tuple] = None  # (start, start + footprint_cds) on the input sequence
 
     @property
     def delta_g_total(self) -> Optional[float]:
@@ -119,7 +120,7 @@ class RBSCalculator:
         results: List[StartCodonResult] = []
 
         for index, codon in find_start_codons(sequence, self.scanned_codons):
-            results.append(self._score_start_codon(sequence, index, codon))
+            results.append(self.predict_one(sequence, index))
 
         return PredictResult(
             sequence=sequence,
@@ -128,15 +129,35 @@ class RBSCalculator:
             results=results,
         )
 
-    def _score_start_codon(self, sequence: str, index: int, codon: str) -> StartCodonResult:
+    def predict_one(
+        self,
+        mrna_sequence: str,
+        start: int,
+        extra_unpaired_global: Optional[Iterable[int]] = None,
+    ) -> StartCodonResult:
+        """Score one start codon, with an optional set of additional global
+        (whole-`mrna_sequence`-indexed) positions forced unpaired in the
+        bound-state fold.
+
+        This is the one constrained-fold hook CDS-footprint unfolding and
+        translational coupling both share (model summary section 6.5):
+        the default occupied set is `[start, start + 3 + footprint_cds)`
+        (the start codon plus HostPack.footprint_cds nt of 30S occupancy
+        on the CDS); `extra_unpaired_global` -- coupling's upstream-CDS
+        nucleotides that fall inside this window -- is unioned into it.
+        Do not add a second, parallel constrained-fold code path; extend
+        this one.
+        """
+        sequence = validate_rna(mrna_sequence)
+        codon = sequence[start : start + 3]
         hp = self.hostpack
-        pre_available = index
+        pre_available = start
         pre_len = hp.cutoff_pre if hp.cutoff_pre is not None else pre_available
         pre_len = min(pre_len, pre_available, MAX_PRE_WINDOW)
-        window_start = index - pre_len
-        window_end = min(len(sequence), index + 3 + hp.cutoff_post)
+        window_start = start - pre_len
+        window_end = min(len(sequence), start + 3 + hp.cutoff_post)
         window = sequence[window_start:window_end]
-        start_in_window = index - window_start
+        start_in_window = start - window_start
 
         utr_in_window = window[:start_in_window]
 
@@ -155,18 +176,37 @@ class RBSCalculator:
 
         if duplex.length == 0:
             return StartCodonResult(
-                index=index,
+                index=start,
                 codon=codon,
                 leaderless=True,
                 window_start=window_start,
                 window_end=window_end,
             )
 
-        delta_g_mrna = self.folder.fold(window).delta_g
+        n = len(window)
+        footprint_end_in_window = min(n, start_in_window + 3 + hp.footprint_cds)
+        occupied = set(range(start_in_window, footprint_end_in_window))
+        if extra_unpaired_global:
+            occupied |= {
+                i - window_start for i in extra_unpaired_global if window_start <= i < window_end
+            }
+
+        e_initial = self.folder.fold(window).delta_g
+        e_bound = self.folder.fold(window, forced_unpaired=frozenset(occupied)).delta_g
+        # Constraining a fold can only raise (or leave unchanged) its minimum
+        # free energy, so e_bound >= e_initial always; this is the physical
+        # cost (>= 0) of reaching the bound-state configuration from the
+        # unconstrained equilibrium, not "-1 * unconstrained MFE" renamed.
+        unfolding = e_bound - e_initial
+
         delta_g_spacing = spacing_penalty(
             duplex.aligned_spacing, hp.s_opt, hp.spacing_push, hp.spacing_pull
         )
         delta_g_start = start_codon_energy(codon, hp.start_codon_dg)
+        # Standby stays on the plain unconstrained-window baseline (not the
+        # footprint-constrained one): occupied is deliberately just the
+        # start codon + footprint_cds, so it never overlaps the standby
+        # site's 4 nt, and this term does not double-count against it.
         delta_g_standby, standby_start, standby_end = standby_penalty(
             window, duplex.mrna_start, hp.standby.standby_site_nt, self.folder
         )
@@ -190,13 +230,18 @@ class RBSCalculator:
         )
         breakdown.add("start", delta_g_start, f"codon = {codon}")
         breakdown.add("stacking", 0.0, "v2.1 homopolymer term; coefficient unpublished, not implemented")
-        breakdown.add("mRNA", -delta_g_mrna, f"-1 * MFE({delta_g_mrna:.2f}) of the folded window")
+        breakdown.add(
+            "mRNA",
+            unfolding,
+            f"bound-state unfolding cost: E_bound({e_bound:.2f}) - E_initial({e_initial:.2f}), "
+            f"footprint {hp.footprint_cds} nt + start codon constrained unpaired",
+        )
 
         rate = proportional_rate(breakdown.total, hp.beta)
         rate_v1 = v1_style_rate(breakdown.total, rt_eff=1.0 / hp.beta)
 
         return StartCodonResult(
-            index=index,
+            index=start,
             codon=codon,
             leaderless=False,
             breakdown=breakdown,
@@ -208,4 +253,5 @@ class RBSCalculator:
             standby_window=(standby_start, standby_end),
             window_start=window_start,
             window_end=window_end,
+            footprint_span=(start, start + hp.footprint_cds),
         )
