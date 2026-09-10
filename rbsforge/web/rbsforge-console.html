@@ -918,7 +918,7 @@ const HOSTPACKS = {
     category: "mesophile", gramStain: "negative", tGrowthC: 37.0, asd: "ACCUCCUUA", sOpt: 5,
     spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
     standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
-    cutoffPost: 35, cutoffPre: null,
+    cutoffPost: 35, cutoffPre: null, footprintCds: 13,
     calibration: "calibrated", uncertainty: "low",
     notes: "Reference organism -- every coefficient is the published, fitted v1.0/v2.0 value.",
   },
@@ -927,7 +927,7 @@ const HOSTPACKS = {
     category: "mesophile", gramStain: "positive", tGrowthC: 37.0, asd: "GAUCACCUCCUUUCU", sOpt: 8,
     spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
     standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
-    cutoffPost: 35, cutoffPre: null,
+    cutoffPost: 35, cutoffPre: null, footprintCds: 13,
     calibration: "prior", uncertainty: "low",
     notes: "aSD tail is RNA-seq mapped (real); beta/spacing curvature/standby are the E. coli prior, not refit for this species.",
   },
@@ -936,7 +936,7 @@ const HOSTPACKS = {
     category: "mesophile", gramStain: "negative", tGrowthC: 30.0, asd: "ACCUCCUUA", sOpt: 5,
     spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
     standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
-    cutoffPost: 35, cutoffPre: null,
+    cutoffPost: 35, cutoffPre: null, footprintCds: 13,
     calibration: "prior", uncertainty: "low",
     notes: "Popular GC-rich Gammaproteobacterial chassis. aSD tail is presumed identical to E. coli's (16S rRNA 3' termini are highly conserved across Gammaproteobacteria) but not independently confirmed for this species. Growth temperature (30C) is real; beta/spacing/standby are the E. coli prior.",
   },
@@ -946,7 +946,7 @@ const HOSTPACKS = {
     asd: "GAUCACCUCCUUUCU", sOpt: 8,
     spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
     standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
-    cutoffPost: 35, cutoffPre: null,
+    cutoffPost: 35, cutoffPre: null, footprintCds: 13,
     calibration: "prior", uncertainty: "medium",
     notes: "aSD borrowed from B. subtilis (unconfirmed for this genus). All non-temperature coefficients are the E. coli prior.",
   },
@@ -955,7 +955,7 @@ const HOSTPACKS = {
     category: "thermophile", gramStain: "positive", tGrowthC: 60.0, asd: "GAUCACCUCCUUUCU", sOpt: 8,
     spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
     standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
-    cutoffPost: 35, cutoffPre: null,
+    cutoffPost: 35, cutoffPre: null, footprintCds: 13,
     calibration: "prior", uncertainty: "medium",
     notes: "AT-richer genome than Thermus or Geobacillus; native SD usage is strong, but AT-rich SD:aSD duplexes that look strong at 37C can melt substantially by its ~60C growth temperature -- the van 't Hoff temperature scaling matters more here than for a GC-richer host. aSD borrowed from B. subtilis (unconfirmed for this genus).",
   },
@@ -964,7 +964,7 @@ const HOSTPACKS = {
     category: "thermophile", gramStain: "negative", tGrowthC: 70.0, asd: "ACCUCCUUA", sOpt: 5,
     spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
     standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
-    cutoffPost: 35, cutoffPre: null,
+    cutoffPost: 35, cutoffPre: null, footprintCds: 13,
     calibration: "prior", uncertainty: "high",
     notes: "Unconfirmed aSD, unmodeled 3'-terminal pseudouridines (Psi1540/Psi1541), E. coli-prior spacing/standby despite a documented different 30S platform (no S21).",
   },
@@ -973,7 +973,7 @@ const HOSTPACKS = {
     category: "thermophile", gramStain: "negative", tGrowthC: 80.0, asd: "ACCUCCUUA", sOpt: 5,
     spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
     standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
-    cutoffPost: 35, cutoffPre: null,
+    cutoffPost: 35, cutoffPre: null, footprintCds: 13,
     calibration: "prior", uncertainty: "high",
     notes: "Highest-temperature, highest-uncertainty built-in profile. Everything but the growth temperature (80C) is an unconfirmed E. coli-derived placeholder, and at this temperature the model's own neglect of nearest-neighbor heat-capacity (deltaCp) effects becomes a real source of error (reported 1-3 kcal/mol per short helix by 75-100C) -- treat outputs here as illustrative of the model's limits, not as predictions.",
   },
@@ -982,7 +982,7 @@ const HOSTPACKS = {
     category: "mesophile", gramStain: "unknown", tGrowthC: 37.0, asd: "ACCUCCUUA", sOpt: 5,
     spacingPush: [12.2, 2.5, 2.0, 3.0], spacingPull: [0.048, 0.24, 0.0],
     standby: DEFAULT_STANDBY, startCodonDg: DEFAULT_START_CODON_DG, beta: 0.45,
-    cutoffPost: 35, cutoffPre: null,
+    cutoffPost: 35, cutoffPre: null, footprintCds: 13,
     calibration: "prior", uncertainty: "high",
     notes: "E. coli prior throughout. Replace the aSD tail at minimum before drawing conclusions.",
   },
@@ -1023,9 +1023,22 @@ function scoreStartCodon(sequence, index, codon, hp, tK, folder) {
     return { index, codon, leaderless: true, windowStart, windowEnd, window, startInWindow };
   }
 
-  const deltaGmRNA = folder.fold(window).deltaG;
+  // Bound-state (footprint) unfolding, mirroring rbsforge.RBSCalculator.predict_one:
+  // E_initial = unconstrained MFE of the window; E_bound = MFE with the start
+  // codon + footprintCds nt of downstream CDS forced unpaired (30S occupancy).
+  // unfolding = E_bound - E_initial >= 0 is the actual cost of reaching the
+  // bound state, not "-1 * unconstrained MFE" (that was the pre-footprint model).
+  const footprintEndInWindow = Math.min(window.length, startInWindow + 3 + hp.footprintCds);
+  const occupied = new Set();
+  for (let i = startInWindow; i < footprintEndInWindow; i++) occupied.add(i);
+  const eInitial = folder.fold(window).deltaG;
+  const eBound = folder.fold(window, occupied).deltaG;
+  const unfolding = eBound - eInitial;
+
   const deltaGspacing = spacingPenalty(duplex.alignedSpacing, hp.sOpt, hp.spacingPush, hp.spacingPull);
   const deltaGstart = startCodonEnergy(codon, hp.startCodonDg);
+  // Standby stays on the plain unconstrained-window baseline (occupied
+  // deliberately excludes the standby 4-nt, so this never double-counts).
   const standby = standbyPenalty(window, duplex.mrnaStart, hp.standby.standbySiteNt, folder);
 
   const terms = {
@@ -1034,7 +1047,7 @@ function scoreStartCodon(sequence, index, codon, hp, tK, folder) {
     spacing: deltaGspacing,
     start: deltaGstart,
     stacking: 0.0,
-    mRNA: -deltaGmRNA,
+    mRNA: unfolding,
   };
   const total = Object.values(terms).reduce((a, b) => a + b, 0);
   const rate = Math.exp(-hp.beta * total);

@@ -52,21 +52,29 @@ only the cross-cutting index.
 ## Layout
 
 ```
-rbsforge/              Module: TIR engine (Predict mode) — implemented
+rbsforge/              Module: TIR engine (Predict mode), predict_one + footprint — implemented
 operon/
-  core/                shared types (OperonHost, CDS, Operon, Assembled)
-  assembly/            Module A — operon assembly
-  coupling/            Module B — translational coupling
-  elongation/          Module C — TER + codon recoding
-  stability/           Module D — mRNA stability
+  core/                shared types (OperonHost, CDS, Operon, Assembled) — implemented
+  assembly/            Module A — operon assembly — implemented
+  coupling/            Module B — translational coupling — implemented
+  elongation/          Module C — TER + codon recoding — implemented (placeholder codon table)
+  stability/           Module D — mRNA stability — features implemented, rate gated on real coefficients
   promoter_calculator/ Module E — sigma70 promoter scan — implemented
-  htisc/               Module F — highly translated internal start codons
-  pauses/              Module G — ribosomal pause sites
-  terminators/         Module H — intrinsic + rho-dependent terminators
-  repeats/             Module I — repeats, IS/att sites
-  synthesis/           Module J — synthesis complexity, RE sites
-  design/              design_rbs + NSGA-II operon design
+  htisc/               Module F — highly translated internal start codons — implemented
+  pauses/              Module G — ribosomal pause sites — implemented (3 of 4 signals)
+  terminators/         Module H — intrinsic + rho-dependent terminators — implemented (presence layer)
+  repeats/             Module I — repeats, IS/att sites — implemented (seed-length, not extended)
+  synthesis/           Module J — synthesis complexity, RE sites — implemented (numeric hard rules)
+  design/              design_rbs + NSGA-II operon design — implemented
 docs/                  architecture overview + full spec
 examples/
 tests/
 ```
+
+Every module above is implemented with real tests, but "implemented"
+does not mean "spec-complete" — most have a documented scope boundary
+(a placeholder data table, a deferred optional signal, a presence-only
+layer standing in for a trained classifier). Read the subpackage's own
+`CLAUDE.md` before assuming a number from it is production-grade; that's
+exactly what each one's "What's not implemented" / "Load-bearing
+constraints" section is for.

@@ -1,9 +1,32 @@
 # operon.terminators — Module H
 
 Internal transcriptional terminator scanning: intrinsic (rho-independent)
-and rho-dependent. **Status: prepared subsection, not implemented.** Spec
-section 13. There is no Salis Terminator Calculator to port — this is a
-scan plus a parts-database append, not a fitted rate model of its own.
+and rho-dependent. **Status: implemented** (presence layer only for
+both). Spec section 13. There is no Salis Terminator Calculator to port
+— this is a scan plus a parts-database append, not a fitted rate model
+of its own.
+
+## What's not implemented
+
+- The Chen-class strength layer (dG_U 8-nt U-tract hybrid energy, dG_L
+  loop-closure energy) is not implemented — `scan_intrinsic_terminators`
+  uses the crude presence gate instead (stem/loop geometry + a >=5-in-8
+  U-tract count + hairpin MFE <= -7 kcal/mol via `BuiltinFolder`), which
+  the spec itself calls "enough for the Operon count."
+- `scan_rho_terminators` is a simplified Rut-site presence check (C/G >
+  1, C count consistent with "roughly every 11-13 nt" in a 78-nt window,
+  plus a downstream pause), not a trained RhoTermPredict/OPLS-DA
+  classifier. Expect it to report several overlapping hits around one
+  real Rut-like region (consecutive shifted 78-nt windows that all still
+  qualify) rather than one merged hit — no de-duplication/merging pass
+  exists yet.
+- Neither scanner is fast on genome-scale input: `_find_hairpin_at` tries
+  every stem/loop combination at every position (~0.1-0.2s per 1000 nt
+  for the intrinsic scan in this implementation). Fine for operon-scale
+  DNA (hundreds to a few thousand nt); don't reach for this on a whole
+  plasmid or genome without profiling first.
+
+## Things worth knowing if you touch this
 
 ## Two independent detectors, don't conflate them
 

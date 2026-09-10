@@ -1,10 +1,32 @@
 # operon.pauses — Module G
 
-Ribosomal pause site scanning inside CDSs. **Status: prepared
-subsection, not implemented.** Spec section 12. Independent motif +
+Ribosomal pause site scanning inside CDSs. **Status: implemented** for
+three of the four documented signals (internal SD/anti-SD, slow-codon
+runs, polyproline/stall motifs). Spec section 12. Independent motif +
 structure scanner; no standalone Salis "Pause Calculator" was ever
 published, so this is an operational definition assembled from adjacent
 tools, not a single model to port.
+
+## What's not implemented
+
+Stable mRNA hairpins in the ribosomal E/P site window are not scanned —
+the spec itself flags this signal as "optional, weaker evidence for
+bacteria." Don't assume `scan_pauses` reports hairpin-based pauses.
+
+## A bug already caught here, worth knowing about
+
+`best_hybridization` can return a duplex that satisfies the minimum
+alignment length but is thermodynamically **unfavorable** (positive
+`delta_g_hybrid` — a weak, coincidental sequence match, not something
+that would actually form). An early version of `_scan_internal_sd`
+reported these as pause hits; a clean all-preferred-codon test CDS
+(`GCGGCGGCGGCG`, no real SD-like structure) still triggered false
+positives this way. `_INTERNAL_SD_MAX_DELTA_G = -1.0` gates on top of
+the length check now — if you touch `_scan_internal_sd`, keep both
+conditions (`duplex.length >= _INTERNAL_SD_MIN_DUPLEX_LENGTH and
+duplex.delta_g_hybrid <= _INTERNAL_SD_MAX_DELTA_G`), not just one.
+
+## Other things to know
 
 ## What "pause site" means here (union of four signals)
 

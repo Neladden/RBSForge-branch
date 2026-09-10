@@ -1,8 +1,7 @@
 # operon.htisc — Module F
 
 Highly translated internal start codons: RBSForge run as a scanner, plus
-a threshold. **Status: prepared subsection, not implemented — but this is
-the cheapest remaining module to finish.** Spec section 11.
+a threshold. **Status: implemented.** Spec section 11.
 
 ## Why this one is easy
 

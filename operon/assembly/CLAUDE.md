@@ -2,43 +2,47 @@
 
 Concatenates promoter + `[RBS_i + CDS_i]` + terminator into one assembled
 DNA/mRNA molecule and computes each junction's intergenic distance `d`.
-**Status: prepared subsection, not implemented.** Spec section 3.
+**Status: implemented.** Spec section 3.
 
-## Before implementing
+## Design decisions worth knowing before touching this
 
-- This is the first module to build (spec section 20, step 1) — nothing
-  else in `operon.*` has a hard dependency on it being done first, but
-  every other module's function signatures take an `Assembled` (from
-  `operon.core`), so get its shape right early.
-- `d = start_{i+1} - stop_i_end`. Negative means overlap. Compute it once
-  per junction at assembly time and store it on `Assembled.junctions`;
-  don't recompute it downstream (`operon.coupling` needs the exact same
-  value `operon.stability`'s protection-window math would derive
-  independently otherwise).
-- The mRNA submitted to translation/coupling/stability starts at the TSS
-  and ends at the terminator's U-tract — not the full assembled DNA.
-  Cryptic-promoter and cryptic-terminator scans run on the *full DNA*,
-  both strands, including the promoter and terminator regions themselves
-  (spec section 3.3) — don't trim those before handing DNA to
-  `operon.promoter_calculator` or `operon.terminators`.
-- Default junction policies (spec section 3.2): `d <= -25` for
-  independent/insulated expression; `d == -4` (AUGA) for hairpin-gated
-  coupling; `d` in `{-4, -1, +3}` with a strong SD and no inhibitory
-  structure for a simple linear leak. Don't default to a long
-  unstructured spacer for insulation — it kills coupling *and* creates an
-  RNase E site *and* may create a cryptic promoter (known failure mode 4).
+- `intergenic_policy` is uniform across the whole `Operon`, not per-
+  junction (`Operon` only carries one field for it). If a design ever
+  needs different policies at different junctions, that's a breaking
+  change to `operon.core.Operon`, not a workaround in `assemble()`.
+- **`"overlap-N"` does not try to reconcile two overlapping reading
+  frames.** It trims the last N nt already placed and splices in CDS_i's
+  own leading N nt as the physically shared span — CDS_i's sequence is
+  authoritative for that span, full stop. If you need both frames to
+  encode specific, correct proteins across the overlap (the usual case
+  for a real AUGA-style junction), that reconciliation is a Design-mode
+  joint recode of "the last 5-10 codons of CDS_i plus the first 5 of
+  CDS_{i+1}" (spec section 18.3/18.4) — do it before calling `assemble`,
+  not inside it. Don't add frame-reconciliation logic here.
+- `Assembled.features` spans are on the full DNA (0-based from
+  `promoter_dna`'s start) — that's the only coordinate system in which
+  the promoter and terminator exist at all. `Assembled.starts` /
+  `Assembled.cds_end` are on `Assembled.mrna` instead (0-based from the
+  TSS), matching `CDS.annotated_start`'s documented convention and what
+  `operon.coupling`'s section 7.3 pseudocode (`assembled.starts`,
+  `assembled.cds_end`) expects. Don't mix the two coordinate systems when
+  extending this module.
+- `Operon.tss` (added alongside this implementation) is `None` by
+  default, meaning "TSS is exactly where `promoter_dna` ends." Once
+  `operon.promoter_calculator` is wired into an end-to-end pipeline, a
+  real TSS call should set this explicitly rather than assuming the
+  promoter/UTR boundary is the transcription start.
+- Cryptic-promoter and cryptic-terminator scans need the *full* DNA
+  (`Assembled.dna`), not `Assembled.mrna` — the promoter and terminator
+  regions are in scope for those scans (spec section 3.3). Don't slice
+  `Assembled.mrna` for anything that's supposed to see the whole
+  construct.
 
-## Interface to build toward
+## Tests
 
-```python
-def assemble(operon: Operon) -> Assembled: ...
-```
-(signature and field-level docstring already in `__init__.py`).
-
-## Tests to write alongside the implementation
-
-- Round-trip a known bi-cistronic construct: AUGA junction should give
-  `d == -4` (spec section 20's own suggested test for this step).
-- `Assembled.mrna` starts at the TSS, not at the start of `Assembled.dna`.
-- Overlap, abutting, and spacer junction configurations all produce the
-  `d` the table in spec section 3.1 predicts.
+`tests/test_assembly.py`. Covers: single-CDS layout and feature spans,
+default vs. explicit TSS, mRNA-relative `starts`/`cds_end`, all four
+`intergenic_policy` kinds (including the canonical `overlap-4` AUGA-style
+junction and `overlap-25` insulation), a 3-cistron operon's two
+junctions, and the reject cases (empty `cds_list`, unknown policy, wrong-
+length spacer, overlap longer than the downstream CDS).

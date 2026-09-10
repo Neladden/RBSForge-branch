@@ -53,50 +53,63 @@ touching another.
 
 | Module | Subpackage | What | Status |
 |---|---|---|---|
-| — | `rbsforge` (sibling package) | TIR engine, Predict mode | **implemented** |
+| — | `rbsforge` (sibling package) | TIR engine, Predict mode, incl. `predict_one` + CDS-footprint unfolding | **implemented** |
 | — | `operon.core` | shared types: `OperonHost`, `CDS`, `Operon`, `Assembled`, `Junction` | **implemented** |
-| A | `operon.assembly` | operon assembly, intergenic distance `d` | prepared, not implemented |
-| B | `operon.coupling` | translational coupling (Tian & Salis 2015) | prepared, not implemented |
-| C | `operon.elongation` | TER + synonymous codon recoding | prepared, not implemented |
-| D | `operon.stability` | mRNA stability (Cetnar & Salis 2021/2024) | prepared, not implemented |
+| A | `operon.assembly` | operon assembly, intergenic distance `d` | **implemented** |
+| B | `operon.coupling` | translational coupling (Tian & Salis 2015) | **implemented** |
+| C | `operon.elongation` | TER + synonymous codon recoding | **implemented** (placeholder codon-usage table) |
+| D | `operon.stability` | mRNA stability (Cetnar & Salis 2021/2024) | **features implemented**; final rate needs real coefficients |
 | E | `operon.promoter_calculator` | sigma70 promoter / cryptic-promoter scan | **implemented** |
-| F | `operon.htisc` | highly translated internal start codons | prepared, not implemented |
-| G | `operon.pauses` | ribosomal pause sites | prepared, not implemented |
-| H | `operon.terminators` | intrinsic + rho-dependent terminators | prepared, not implemented |
-| I | `operon.repeats` | repeats (>=12 bp), IS/att sites | prepared, not implemented |
-| J | `operon.synthesis` | synthesis complexity, restriction sites | prepared, not implemented |
+| F | `operon.htisc` | highly translated internal start codons | **implemented** |
+| G | `operon.pauses` | ribosomal pause sites | **implemented** (3 of 4 signals) |
+| H | `operon.terminators` | intrinsic + rho-dependent terminators | **implemented** (presence layer) |
+| I | `operon.repeats` | repeats (>=12 bp), IS/att sites | **implemented** (seed-length, not extended) |
+| J | `operon.synthesis` | synthesis complexity, restriction sites | **implemented** (numeric hard rules; no hairpin/G-quad) |
 | K | — (bookkeeping over other modules) | system-level RNAP/ribosome load | not started |
-| — | `operon.design` | `design_rbs` (inverse RBS) + NSGA-II operon design | prepared, not implemented |
+| — | `operon.design` | `design_rbs` (inverse RBS) + NSGA-II operon design | **implemented** |
 
-"Prepared" means the subpackage exists with a module docstring citing its
-spec section and source papers, and stub functions with the documented
-signature that raise `NotImplementedError` — real scaffolding, not an
-empty directory, but no algorithm behind it yet.
+Every module above has real tests in `tests/` — see each subpackage's
+own `CLAUDE.md` for exactly what's implemented vs. deliberately deferred
+(most modules have at least one documented scope boundary; "implemented"
+here means "has a real, tested algorithm behind it," not "matches the
+full spec with nothing left to extend").
 
-## Implementation order
+## Implementation order (history)
 
-The spec (section 20) gives a dependency-ordered build sequence; the
-short version, updated for what's actually done:
+The spec (section 20) gave a dependency-ordered build sequence; this is
+the order it actually happened in, since it diverged from the spec's own
+suggested order in two places:
 
-1. ~~Assembler + intergenic distance~~ → next up (Module A)
-2. ~~TIR scale freeze + `predict_tir` adapter~~ → already true of `rbsforge`
-3. HTISC (Module F) — cheapest next step; needs no new physics, only wraps `rbsforge.RBSCalculator.predict`
-4. `predict_one` + forced-unpaired + CDS-footprint unfolding — an `rbsforge` change, blocks Module B
-5. Coupling (Module B) — needs step 4 and a Vienna-backed fold
-6. `design_rbs` (inverse RBS design)
+1. Assembler + intergenic distance (Module A)
+2. TIR scale freeze + `predict_tir` adapter — already true of `rbsforge`
+   from the start
+3. **Promoter Calculator (Module E)** — pulled forward out of spec order
+   (originally step 10) because it has no dependency on any other
+   unimplemented module; it only needs a DNA sequence
+4. HTISC (Module F) — cheapest step; needs no new physics, only wraps
+   `rbsforge.RBSCalculator.predict`
+5. `predict_one` + forced-unpaired + CDS-footprint unfolding — an
+   `rbsforge` change, the prerequisite for Module B
+6. Coupling (Module B) — built against the builtin folder with a
+   `require_vienna` refuse/warn gate (this environment has no `RNAfold`
+   on `PATH`; the tests exercise the warn path explicitly)
 7. Codon recoding + TER (Module C)
 8. Repeat finder (Module I)
 9. RE sites + homopolymer/GC (Module J)
-10. **Promoter Calculator (Module E) — done**
-11. Intrinsic terminator scan (Module H)
-12. Pause / internal-SD scan (Module G)
-13. mRNA stability (Module D)
-14. NSGA-II design search (`operon.design`)
-15. 2024 GBDT stability, rho terminators, IS tables, system load, v2.0 standby
+10. Intrinsic + rho-dependent terminator scan (Module H)
+11. Pause / internal-SD scan (Module G)
+12. mRNA stability features (Module D) — final rate deliberately left
+    gated on real coefficients, not shipped with an invented default
+13. `design_rbs` (inverse RBS design) — verified across the full 10-
+    50,000 au target-TIR range
+14. NSGA-II design search (`operon.design.design`, plus ready-made
+    objectives in `operon.design.objectives`)
 
-Module E (promoter calculator) was pulled forward out of its spec order
-because it has no dependency on any other unimplemented module — it only
-needs a DNA sequence.
+Remaining, later-layer expansions per spec section 20's step 15 (2024
+GBDT stability, trained RhoTermPredict/OPLS-DA classifier, IS tables,
+system load bookkeeping, v2.0 standby, SSC's random forest) are not
+implemented — see each module's own `CLAUDE.md` for what's deferred and
+why.
 
 ## What not to do
 

@@ -42,7 +42,7 @@ r = exp(-beta * delta_G_total)
 
 | Term | Status | Notes |
 |---|---|---|
-| `delta_G_mRNA` | implemented | MFE of a folded window around the start codon, via a from-scratch simplified nearest-neighbor folder (or ViennaRNA `RNAfold` if installed on PATH). |
+| `delta_G_mRNA` | implemented (v1.1 two-fold) | Bound-state unfolding cost: `E_bound - E_initial`, where `E_initial` is the unconstrained MFE of the folded window and `E_bound` is the MFE of the same window with the start codon plus `HostPack.footprint_cds` (13 nt) of downstream CDS forced unpaired -- the 30S occupancy footprint. Structure entirely outside that occupied region costs nothing via this term (it doesn't have to be disrupted for the ribosome to bind); structure entirely inside it costs its full stability. Via a from-scratch simplified nearest-neighbor folder, or ViennaRNA `RNAfold` if installed on PATH. Exposed as `RBSCalculator.predict_one(mrna, start, extra_unpaired_global=None)`, the one constrained-fold hook translational coupling (in `operon.coupling`) also uses. |
 | `delta_G_mRNA:rRNA` | implemented | SD:anti-SD duplex search over all registers, scored with temperature-scaled nearest-neighbor stacking. Uses the v1.0 selection rule: keep the alignment that minimizes `delta_G_hybrid + delta_G_spacing(aligned_spacing)` jointly, not the strongest duplex alone. |
 | `delta_G_spacing` | implemented | Exact v1.0 push/pull formulas (logistic compression penalty, quadratic extension penalty), evaluated on *aligned* spacing (Chen/Salis-corrected for anti-SD registers that don't reach the tail's 3' terminus), not raw nucleotide count. |
 | `delta_G_start` | implemented | v1.0 codon table (AUG/GUG/UUG/CUG apparent fMet-tRNA pairing energies). |

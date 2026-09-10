@@ -1,0 +1,755 @@
+<title>Promoter Calculator Console</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ground:#EFF3F4;
+    --surface:#FFFFFF;
+    --surface-2:#E4EAEC;
+    --ink:#1C2530;
+    --ink-muted:#5B6874;
+    --ink-faint:#8A96A0;
+    --border:#D2DADD;
+    --border-strong:#B7C2C6;
+    --accent:#0F7A78;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#DCEEED;
+    --good:#2E8558;
+    --good-soft:#E1F0E6;
+    --bad:#B14B3F;
+    --bad-soft:#F6E4E1;
+    --warn:#9C6B12;
+    --warn-soft:#F3E6C9;
+    --focus:#0F7A78;
+    --shadow: 0 1px 2px rgba(28,37,48,0.06), 0 8px 24px -12px rgba(28,37,48,0.18);
+    /* element-map segment colors */
+    --seg-up:#B7C2C6;
+    --seg-gap:transparent;
+    --seg-35:#3E7CB1;
+    --seg-spacer:#E4EAEC;
+    --seg-10:#C9722F;
+    --seg-disc:#7A63A8;
+    --seg-itr:#2E8558;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#12171C; --surface:#1A2128; --surface-2:#212930;
+      --ink:#E7ECEE; --ink-muted:#9AA7B0; --ink-faint:#69747C;
+      --border:#2B343C; --border-strong:#3A4650;
+      --accent:#4FC7C2; --accent-ink:#0C1416; --accent-soft:#1D3230;
+      --good:#67BF8B; --good-soft:#1C3128; --bad:#E08C80; --bad-soft:#3A241F;
+      --warn:#D9A648; --warn-soft:#3A2E16; --focus:#4FC7C2;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.6);
+      --seg-up:#3A4650; --seg-35:#6FA8D8; --seg-spacer:#212930; --seg-10:#E39A5C; --seg-disc:#A995D6; --seg-itr:#67BF8B;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#12171C; --surface:#1A2128; --surface-2:#212930;
+    --ink:#E7ECEE; --ink-muted:#9AA7B0; --ink-faint:#69747C;
+    --border:#2B343C; --border-strong:#3A4650;
+    --accent:#4FC7C2; --accent-ink:#0C1416; --accent-soft:#1D3230;
+    --good:#67BF8B; --good-soft:#1C3128; --bad:#E08C80; --bad-soft:#3A241F;
+    --warn:#D9A648; --warn-soft:#3A2E16; --focus:#4FC7C2;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.6);
+    --seg-up:#3A4650; --seg-35:#6FA8D8; --seg-spacer:#212930; --seg-10:#E39A5C; --seg-disc:#A995D6; --seg-itr:#67BF8B;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--ground); color:var(--ink);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size:14px; line-height:1.5;
+  }
+  h1,h2,h3{font-family:"Newsreader", Georgia, serif; text-wrap:balance; margin:0;}
+  .mono{font-family:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;}
+  .tnum{font-variant-numeric:tabular-nums;}
+  ::selection{background:var(--accent-soft);}
+  :focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+
+  .app{
+    max-width:1180px; margin:0 auto; padding:28px 24px 56px;
+    display:grid; grid-template-columns:328px 1fr; gap:24px; align-items:start;
+  }
+  @media (max-width:860px){ .app{grid-template-columns:1fr;} }
+
+  header.masthead{
+    grid-column:1/-1; display:flex; align-items:baseline; justify-content:space-between;
+    gap:16px; padding-bottom:18px; border-bottom:1px solid var(--border); margin-bottom:2px;
+  }
+  .brand{display:flex; align-items:baseline; gap:12px;}
+  .brand h1{font-size:26px; font-weight:600; letter-spacing:-0.01em;}
+  .brand .tag{
+    font-family:"IBM Plex Mono", monospace; font-size:11px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--ink-faint); padding-top:2px;
+  }
+  .masthead .subtitle{font-size:12.5px; color:var(--ink-muted); max-width:360px; text-align:right;}
+
+  .rail{position:sticky; top:20px; display:flex; flex-direction:column; gap:18px;}
+  .panel{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:16px; box-shadow:var(--shadow);
+  }
+  .panel > .panel-title{
+    font-family:"IBM Plex Mono", monospace; font-size:11px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--ink-faint); margin-bottom:10px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+
+  textarea#sequence{
+    width:100%; min-height:120px; resize:vertical;
+    background:var(--surface-2); border:1px solid var(--border); border-radius:7px;
+    padding:10px 11px; font-family:"IBM Plex Mono", monospace; font-size:13px;
+    line-height:1.55; color:var(--ink); letter-spacing:0.01em;
+  }
+  .seq-meta{display:flex; justify-content:space-between; margin-top:8px; font-size:11.5px; color:var(--ink-muted);}
+  .seq-meta .warn{color:var(--bad);}
+  .example-btn{
+    margin-top:8px; font-size:11.5px; color:var(--accent);
+    background:none; border:none; padding:0; cursor:pointer;
+    text-decoration:underline; text-underline-offset:2px;
+  }
+  .strand-note{font-size:11px; color:var(--ink-faint); line-height:1.5; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);}
+
+  select#conditionSelect{
+    width:100%; background:var(--surface-2); border:1px solid var(--border); border-radius:7px;
+    padding:9px 32px 9px 11px; font-family:"IBM Plex Sans", sans-serif; font-size:13.5px;
+    color:var(--ink); cursor:pointer; appearance:none; -webkit-appearance:none; -moz-appearance:none;
+    background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: calc(100% - 17px) center, calc(100% - 12px) center;
+    background-size: 5px 5px, 5px 5px; background-repeat:no-repeat;
+  }
+
+  .species-summary{
+    margin-top:10px; display:flex; flex-direction:column; gap:5px;
+    border:1px solid var(--border); background:var(--surface-2); border-radius:8px; padding:10px 11px;
+  }
+  .species-summary .row1{display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
+  .species-summary .sci-name{font-style:italic; font-family:"Newsreader", serif; font-size:15px;}
+  .species-summary .row2{display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .species-summary .meta{font-size:11px; color:var(--ink-muted); font-family:"IBM Plex Mono", monospace;}
+  .species-summary .notes{font-size:11px; color:var(--ink-faint); line-height:1.5; margin-top:2px;}
+  .badge{
+    font-family:"IBM Plex Mono", monospace; font-size:9.5px; letter-spacing:.04em; text-transform:uppercase;
+    padding:2px 6px; border-radius:100px; white-space:nowrap;
+  }
+  .badge.calibrated{background:var(--good-soft); color:var(--good);}
+  .badge.prior{background:var(--warn-soft); color:var(--warn);}
+  .badge.speculative{background:var(--bad-soft); color:var(--bad);}
+  .caveat{font-size:11.5px; color:var(--ink-muted); line-height:1.5; border-top:1px dashed var(--border); margin-top:12px; padding-top:10px;}
+  .caveat strong{color:var(--ink);}
+
+  .field{margin-bottom:0;}
+  .field label{
+    display:block; font-size:10.5px; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--ink-faint); font-family:"IBM Plex Mono",monospace; margin-bottom:5px;
+  }
+  .field input[type="number"]{
+    width:100%; background:var(--surface-2); border:1px solid var(--border); border-radius:6px;
+    padding:7px 9px; font-size:13px; color:var(--ink); font-family:"IBM Plex Mono",monospace;
+  }
+  .field-hint{font-size:10.5px; color:var(--ink-faint); line-height:1.4; margin-top:6px;}
+
+  /* --- results --- */
+  .results{display:flex; flex-direction:column; gap:20px; min-width:0;}
+
+  .strip-scroll{overflow-x:auto; padding-bottom:4px; margin:0 -2px;}
+  .strip{display:flex; gap:10px; padding:2px;}
+  .candidate{
+    flex:0 0 auto; min-width:150px;
+    background:var(--surface); border:1px solid var(--border); border-radius:9px;
+    padding:11px 12px; cursor:pointer; box-shadow:var(--shadow);
+  }
+  .candidate.selected{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft), var(--shadow);}
+  .candidate .pos{font-family:"IBM Plex Mono", monospace; font-size:10.5px; color:var(--ink-faint); display:flex; justify-content:space-between; gap:6px;}
+  .candidate .strand-chip{
+    font-family:"IBM Plex Mono",monospace; font-size:9.5px; padding:1px 5px; border-radius:4px;
+    background:var(--surface-2); color:var(--ink-muted);
+  }
+  .candidate .tx{font-family:"IBM Plex Mono", monospace; font-size:16px; font-weight:600; letter-spacing:.03em; margin-top:2px;}
+  .candidate .dg{font-family:"IBM Plex Mono", monospace; font-size:12px; color:var(--ink-muted); margin-top:2px;}
+  .candidate .bar-track{height:5px; border-radius:100px; background:var(--surface-2); margin-top:8px; overflow:hidden;}
+  .candidate .bar-fill{height:100%; background:var(--accent); border-radius:100px;}
+
+  .detail{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:20px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:20px;
+  }
+  .detail-head{display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap;}
+  .headline{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .headline .rate{font-family:"Newsreader", serif; font-size:42px; font-weight:500;}
+  .headline .rate-unit{font-size:12.5px; color:var(--ink-muted);}
+  .headline .dg-total{font-family:"IBM Plex Mono", monospace; font-size:14px; color:var(--ink-muted);}
+  .headline .dg-total b{color:var(--ink); font-weight:600;}
+  .loc-tag{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--ink-faint); text-align:right;}
+
+  .section-label{
+    font-family:"IBM Plex Mono", monospace; font-size:11px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--ink-faint); margin-bottom:10px;
+  }
+
+  .terms-chart{display:flex; flex-direction:column; gap:7px;}
+  .term-row{display:grid; grid-template-columns:96px 1fr 68px; align-items:center; gap:10px;}
+  .term-row .tname{font-size:12.5px; color:var(--ink-muted);}
+  .term-row .tval{font-family:"IBM Plex Mono",monospace; font-size:12.5px; text-align:right; font-variant-numeric:tabular-nums;}
+  .term-row .tval.neg{color:var(--good);}
+  .term-row .tval.pos{color:var(--bad);}
+  .diverge{position:relative; height:16px; background:var(--surface-2); border-radius:4px; overflow:hidden;}
+  .diverge .zero{position:absolute; top:0; bottom:0; width:1px; background:var(--border-strong);}
+  .diverge .fill{position:absolute; top:1px; bottom:1px; border-radius:3px;}
+  .diverge .fill.neg{background:var(--good);}
+  .diverge .fill.pos{background:var(--bad);}
+  .term-note{grid-column:1/-1; font-size:11px; color:var(--ink-faint); margin-top:-3px; margin-left:1px;}
+
+  .map-figure{margin:0;}
+  .map-scroll{overflow-x:auto; padding-bottom:2px;}
+  .map-figure svg{display:block;}
+  .map-figure figcaption{font-size:11.5px; color:var(--ink-muted); margin-top:8px; line-height:1.5;}
+  .map-legend{display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;}
+  .map-legend .item{display:flex; align-items:center; gap:5px; font-size:10.5px; color:var(--ink-muted);}
+  .map-legend .swatch{width:9px; height:9px; border-radius:2px; flex:0 0 auto;}
+
+  .empty-state{
+    padding:40px 20px; text-align:center; color:var(--ink-muted);
+    background:var(--surface); border:1px dashed var(--border-strong); border-radius:10px;
+  }
+
+  .other-list{font-size:12px; color:var(--ink-faint);}
+  .other-list .lede{margin-bottom:6px;}
+  .other-list .chips{display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
+  .other-list .lchip{
+    font-family:"IBM Plex Mono",monospace; background:var(--surface-2); border-radius:5px; padding:3px 7px; cursor:pointer;
+  }
+  .other-list .lchip:hover{outline:1px solid var(--border-strong);}
+
+  footer.credits{
+    grid-column:1/-1; margin-top:8px; padding-top:16px; border-top:1px solid var(--border);
+    font-size:11.5px; color:var(--ink-faint); display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+</style>
+
+<div class="app">
+  <header class="masthead">
+    <div class="brand">
+      <h1>Promoter Calculator Console</h1>
+      <span class="tag">σ70 scan · live</span>
+    </div>
+    <div class="subtitle">A term-by-term σ70 transcription-rate calculator — every candidate TSS, both strands, no black box.</div>
+  </header>
+
+  <div class="rail">
+    <div class="panel">
+      <div class="panel-title">DNA sequence</div>
+      <textarea id="sequence" class="mono" spellcheck="false"></textarea>
+      <div class="seq-meta">
+        <span id="seqLen">0 nt</span>
+        <span id="seqWarn" class="warn"></span>
+      </div>
+      <button class="example-btn" id="exampleBtn" type="button">Load example promoter</button>
+      <div class="strand-note">Scanned on both strands, every position as a candidate TSS — this mirrors how the assembled-operon scan in <span class="mono">operon.promoter_calculator</span> is run, not a single fixed-TSS lookup.</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Condition</div>
+      <select id="conditionSelect"></select>
+      <div class="species-summary" id="conditionSummary"></div>
+      <div class="caveat" id="conditionCaveat"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Cryptic-promoter threshold</div>
+      <div class="field">
+        <label for="tauInput">Tx_rate floor</label>
+        <input type="number" id="tauInput" class="mono" min="0" step="0.1" value="1">
+      </div>
+      <div class="field-hint">Hits other than the top-ranked one that clear this Tx_rate are listed below the detail panel as candidate cryptic/internal promoters (spec section 10.3) — everything else is a real hit that's just weaker than the floor, not filtered out of the ranked strip above.</div>
+    </div>
+  </div>
+
+  <div class="results">
+    <div>
+      <div class="section-label">Candidate transcription start sites, ranked by predicted rate</div>
+      <div class="strip-scroll"><div class="strip" id="candidateStrip"></div></div>
+    </div>
+
+    <div id="detailMount"></div>
+
+    <div id="otherMount"></div>
+  </div>
+
+  <footer class="credits">
+    <span>Reimplements the LaFleur, Hossain &amp; Salis (2022) 346-parameter σ70 free-energy model from scratch, in-browser.</span>
+    <span>Only <em>E. coli</em> MG1655 (in vivo) and in vitro are calibrated — see the condition panel.</span>
+  </footer>
+</div>
+
+<script>
+/* ======================= MODEL (ported from operon/promoter_calculator/, Python) =======================
+   Mirrors operon/promoter_calculator/{tables,features,energy_model,coefficients,calculator}.py.
+   Numerically verified against that package (see this repo's tests/test_promoter_calculator.py for
+   the Python-side invariants this port must keep matching: consensus-vs-scrambled ranking, the
+   breakdown-terms-sum-to-total identity, and exact-energy reverse-strand round-tripping).
+   If a formula changes in the Python package, this port drifts out of sync silently -- there is no
+   shared source between them. Re-verify by hand before trusting a model change here. */
+
+// --- fitted coefficients (343 values + intercept), extracted verbatim from the
+// published model release, same provenance as operon/promoter_calculator/coefficients.py ---
+const COEFFS = {"K":42.0,"BETA_IN_VIVO":1.636217004872062,"BETA_IN_VITRO":0.81632623,"NORM_DIST_UP":256.0,"NORM_PROX_UP":255.0,"NORM_ITR":4.300000000000002,"NORM_RIGIDITY":25.780434782608694,"INTERCEPT":-0.9583584537583338,"HEX35_LEFT":{"AAA":0.0,"AAC":0.16540471136174353,"AAG":0.20399532646960403,"AAT":0.0,"ACA":0.26202919727030116,"ACC":0.0,"ACG":0.1085144161441575,"ACT":0.0,"AGA":0.0,"AGC":0.0,"AGG":0.11715359318273247,"AGT":0.0,"ATA":0.23463667489026757,"ATC":-0.02266078879538195,"ATG":-0.42057592950756695,"ATT":-0.008068733965697007,"CAA":0.20522206154317535,"CAC":0.15203060003839258,"CAG":0.045544678282602453,"CAT":0.1500781457366836,"CCA":0.1877433271981443,"CCC":0.2876153782860975,"CCG":0.022347560306883285,"CCT":0.1503878584281531,"CGA":0.17716741797455585,"CGC":0.32537335947877183,"CGG":0.025433429323852983,"CGT":-0.0038884919611999625,"CTA":-0.1952143346110267,"CTC":0.1029676100034498,"CTG":-0.24629712834653053,"CTT":-0.11390935631664142,"GAA":0.25840804202788786,"GAC":0.08580103150005455,"GAG":0.177621328096816,"GAT":0.0,"GCA":0.4172176386838069,"GCC":0.252003184989742,"GCG":-0.011394041424139419,"GCT":0.11882049592994029,"GGA":0.0,"GGC":0.1897743936378747,"GGG":0.2356330850982128,"GGT":0.09817020013819935,"GTA":-0.23849417242526405,"GTC":-0.10039373057177248,"GTG":-0.23783376052923252,"GTT":-0.09254566213228003,"TAA":-0.10057135366438301,"TAC":0.031594925820520314,"TAG":-0.39096020475985893,"TAT":-0.1518800857079465,"TCA":0.09651004698673261,"TCC":0.0414044833258263,"TCG":-0.13499031380149526,"TCT":-0.2204862015355318,"TGA":-0.12436571896176705,"TGC":0.0,"TGG":-0.3332502512580711,"TGT":-0.0556343867600926,"TTA":-0.14150345445471604,"TTC":-0.2610965805370817,"TTG":-0.8511202866148896,"TTT":-0.46946923351264314},"HEX35_RIGHT":{"AAA":-0.16908705233531682,"AAC":0.043641084157395524,"AAG":0.0032413186806323083,"AAT":-0.28364370837131575,"ACA":-0.6260976284949558,"ACC":-0.013027902113514216,"ACG":-0.15311120173832768,"ACT":-0.40719887288673423,"AGA":-0.13692983107476275,"AGC":0.177032592979125,"AGG":0.0832860860945223,"AGT":0.13446032354401016,"ATA":-0.05466223246930263,"ATC":-0.19114400490445757,"ATG":0.03203870958479575,"ATT":-0.14754411345414545,"CAA":-0.22515898726967176,"CAC":-0.00590248812297179,"CAG":-0.05245668616935422,"CAT":-0.06933635697725887,"CCA":-0.23235464438478887,"CCC":0.04782476812796241,"CCG":-0.013635747921151463,"CCT":-0.3122991962691227,"CGA":0.04535468125660317,"CGC":0.16364105235292595,"CGG":0.02279507617908226,"CGT":-0.004260528433371471,"CTA":-0.13420128185295316,"CTC":0.15232644152662514,"CTG":0.022378460778619363,"CTT":-0.07610553119535049,"GAA":-0.11320386467567833,"GAC":0.29318904946196794,"GAG":0.030984070093653684,"GAT":0.026543672719968405,"GCA":-0.04432364947099053,"GCC":0.2215610511190525,"GCG":-0.0032395179289541245,"GCT":-0.0369869360824641,"GGA":0.14785211603113513,"GGC":0.39444970100658056,"GGG":0.22783563226934417,"GGT":0.4579923412170347,"GTA":-0.16901178129880748,"GTC":0.2823185034692884,"GTG":0.1206666836451072,"GTT":0.1054367402601531,"TAA":-0.16892049808735207,"TAC":0.17037335610440976,"TAG":-0.006665799606645034,"TAT":-0.06804398201966647,"TCA":-0.08322017053190033,"TCC":0.29621900270844964,"TCG":0.1303731072246929,"TCT":-0.09236019035237614,"TGA":0.07908733709760897,"TGC":0.14795245452341682,"TGG":0.0,"TGT":-0.11774727064261974,"TTA":0.05492373131928146,"TTC":0.21314019569262882,"TTG":0.0,"TTT":-0.11703768409025755},"HEX10_LEFT":{"AAA":0.09490738746347842,"AAC":0.028821899543931544,"AAG":0.1198230376783691,"AAT":-0.34434029969128693,"ACA":0.0,"ACC":0.0,"ACG":0.0,"ACT":0.1638454358405594,"AGA":0.0,"AGC":0.0,"AGG":0.0,"AGT":0.2147940064357312,"ATA":0.0,"ATC":0.0,"ATG":0.0,"ATT":-0.02760841459847772,"CAA":-0.18785061878221526,"CAC":-0.027935088893270586,"CAG":0.07065084457433997,"CAT":-0.2999626574312279,"CCA":0.17249598290925514,"CCC":0.22167955893809602,"CCG":0.0,"CCT":0.4295831188048784,"CGA":0.046398931797263954,"CGC":0.0,"CGG":0.0,"CGT":0.42392556132156406,"CTA":-0.09617404850628807,"CTC":0.0,"CTG":0.0,"CTT":0.32615138291787527,"GAA":0.10505054947551914,"GAC":-0.00040256483059495306,"GAG":0.1588895386113908,"GAT":-0.2596949339348936,"GCA":0.17726911147529376,"GCC":0.0,"GCG":0.0,"GCT":0.22783938527506442,"GGA":0.0,"GGC":0.0,"GGG":0.0,"GGT":0.014025497244297485,"GTA":-0.189873085272735,"GTC":0.0,"GTG":0.0,"GTT":0.23433309066242222,"TAA":-0.7063684812690003,"TAC":-0.6955332165785065,"TAG":-0.5791109861977634,"TAT":-0.9106392228465209,"TCA":0.2131582968259988,"TCC":0.024649344853042127,"TCG":0.2571180467299443,"TCT":0.05923658893091885,"TGA":0.06348749096954126,"TGC":0.021820191839442202,"TGG":0.037754073983779904,"TGT":0.03301394297027404,"TTA":-0.16745326285599052,"TTC":0.24049535076215106,"TTG":0.03556826824357014,"TTT":0.2761609646098749},"HEX10_RIGHT":{"AAA":-0.14042593692886762,"AAC":-0.012384111923827271,"AAG":0.07062384545829954,"AAT":-0.8708852278943782,"ACA":-0.18378838543440634,"ACC":0.053183152602326395,"ACG":0.18086946257241995,"ACT":-0.770785967815676,"AGA":0.12034744752130364,"AGC":0.1644544995394996,"AGG":-0.11797676076098046,"AGT":-0.6032012647867945,"ATA":-0.2815784985072322,"ATC":0.016760580206517762,"ATG":-0.011108666369123185,"ATT":-0.5839670229680539,"CAA":0.37084711173422535,"CAC":0.2296544538769969,"CAG":0.2927349456965483,"CAT":-0.5976286243429203,"CCA":0.4160724843435361,"CCC":0.2770948968883442,"CCG":0.23833369595511988,"CCT":-0.28201835991540614,"CGA":0.0,"CGC":0.44130138079556164,"CGG":0.0,"CGT":-0.22957944752798204,"CTA":0.07217807522519586,"CTC":0.13545420990605467,"CTG":0.0,"CTT":-0.21516031962995938,"GAA":0.1703433358271497,"GAC":0.23430195379743315,"GAG":0.359782319300283,"GAT":-0.5236823489952451,"GCA":0.24985810790957888,"GCC":0.23599181501756106,"GCG":0.239697508426137,"GCT":-0.3118833171984491,"GGA":0.3054009417807217,"GGC":0.3641217865297511,"GGG":0.0,"GGT":-0.2693116358365752,"GTA":0.13490947717257368,"GTC":0.2726684004794281,"GTG":0.3607159076854683,"GTT":-0.2319440535211394,"TAA":0.06384993062886919,"TAC":0.18558906240429637,"TAG":0.0009394931280153995,"TAT":-0.8503870687473457,"TCA":0.3088283133466719,"TCC":0.30371182219728826,"TCG":0.2585312898601096,"TCT":-0.389182428759729,"TGA":0.12192168180402255,"TGC":0.42950855129388393,"TGG":0.0,"TGT":-0.29282726925801883,"TTA":0.07585053289082558,"TTC":-0.035366737127009884,"TTG":0.30382604520695994,"TTT":-0.255185064758909},"DISC_FIRST3":{"AAA":-0.04487847301375619,"AAC":0.03794051524303827,"AAG":0.09488766696998044,"AAT":-0.004857517483925856,"ACA":0.02431586158030238,"ACC":-0.11446373347665721,"ACG":-0.020389208170715694,"ACT":-0.1193189216919453,"AGA":0.12376967412070047,"AGC":0.1658800645338869,"AGG":0.012795170885314655,"AGT":-0.09222196801281188,"ATA":-0.060202924695229726,"ATC":0.1590161608033341,"ATG":0.20286290801530318,"ATT":-0.028406436170158426,"CAA":0.09495745073130975,"CAC":-0.14096411166041897,"CAG":0.13280770587783802,"CAT":-0.06688516612075936,"CCA":-0.07102722808182321,"CCC":-0.10642768631174408,"CCG":-0.10896914894976407,"CCT":-0.15457117818056698,"CGA":-0.1379660792586186,"CGC":-0.16688377160145138,"CGG":0.06601460246286905,"CGT":0.1194498180205362,"CTA":-0.07065392365182463,"CTC":0.024942086366553075,"CTG":-0.11739483005842419,"CTT":0.2026342762130632,"GAA":0.15203157529060746,"GAC":-0.018881814329846067,"GAG":0.20430148488065647,"GAT":0.06678815959103351,"GCA":-0.17513818723646626,"GCC":-0.09485187672560347,"GCG":-0.13940934892487852,"GCT":-0.18001627903684744,"GGA":-0.034709986895396124,"GGC":0.012178218133649998,"GGG":0.08046241181452651,"GGT":-0.009420113359516894,"GTA":0.1829665642586891,"GTC":0.06717619959178263,"GTG":0.023900602351315935,"GTT":0.16271416108557177,"TAA":0.0702536687063409,"TAC":0.04647874230110192,"TAG":0.0001848609146443243,"TAT":-0.1441943360313018,"TCA":-0.10618594980487601,"TCC":-0.1495728239641026,"TCG":-0.12232781084798844,"TCT":-0.16594764875320808,"TGA":0.10780912735135333,"TGC":-0.06396369387766375,"TGG":0.18496263427023718,"TGT":-0.029965515348874584,"TTA":0.09241381856502776,"TTC":0.0403155010901358,"TTG":-0.047827908405309136,"TTT":0.15168390811051485},"EXT10_2MER":{"AA":0.0610364204005321,"AC":0.12238080735979254,"AG":-0.056176643129648894,"AT":-0.1710940037718414,"CA":-0.15950251583247507,"CC":0.02482021652708394,"CG":0.07186020160067112,"CT":0.18814810202386284,"GA":0.11099622297853319,"GC":0.13682442558153468,"GG":0.027096935239089858,"GT":-0.07964961793745078,"TA":-0.139301362120528,"TC":0.19135161731618874,"TG":-0.2144031377586821,"TT":-0.11438766847409058},"NUMERICAL_COEFS":{"dist_up":0.2546979750256038,"prox_up":0.6505806574328081,"itr":0.16210794028069989,"rigidity":0.009426894866260856}};
+
+// --- dinucleotide physical parameter tables (tables.py) ---
+const GROOVE_ACCESS = {
+  CG:43, CA:42, TG:42, GG:42, CC:42, GC:25, GA:22, TC:22,
+  TA:14, AG:9, CT:9, AA:5, TT:5, AC:4, GT:4, AT:0,
+};
+const PERSISTENCE = {
+  AA:50.4, TT:50.4, AC:55.4, GT:55.4, AG:51.0, CT:51.0, AT:40.9,
+  CA:46.7, TG:46.7, CC:41.7, GG:41.7, CG:56.0, GA:54.4, TC:54.4, GC:44.6, TA:44.7,
+};
+const DNA_DNA_HYBRID = {
+  AA:-1.00, TT:-1.00, AT:-0.88, TA:-0.58, CA:-1.45, TG:-1.45, GT:-1.44, AC:-1.44,
+  CT:-1.28, AG:-1.28, GA:-1.30, TC:-1.30, CG:-2.17, GC:-2.24, GG:-1.42, CC:-1.42,
+};
+const RNA_DNA_HYBRID = {
+  TT:-1.0, TG:-2.1, TC:-1.8, TA:-0.9, GT:-0.9, GG:-2.1, GC:-1.7, GA:-0.9,
+  CT:-1.3, CG:-2.7, CC:-2.9, CA:-1.1, AT:-0.6, AG:-1.5, AC:-1.6, AA:-0.2,
+};
+
+// --- numerical features (features.py) ---
+function grooveWidth(seq) {
+  let total = 0;
+  for (let i = 0; i < seq.length - 1; i += 2) total += GROOVE_ACCESS[seq.slice(i, i + 2)];
+  return total;
+}
+function rigidity(seq) {
+  let total = 0;
+  for (let i = 0; i < seq.length; i += 2) total += PERSISTENCE[seq.slice(i, i + 2)];
+  return total / seq.length;
+}
+function dnaRnaHybridEnergy(itr) {
+  let dgDna = 0, dgRna = 0;
+  const window = itr.slice(0, 15);
+  for (let i = 0; i < window.length - 1; i += 2) {
+    const pair = window.slice(i, i + 2);
+    dgDna += DNA_DNA_HYBRID[pair];
+    dgRna += RNA_DNA_HYBRID[pair];
+  }
+  return [dgDna, dgRna, dgDna - dgRna];
+}
+
+// --- linear free-energy model (energy_model.py) ---
+function scoreElements(elements) {
+  const dg10 = COEFFS.HEX10_LEFT[elements.hex10.slice(0, 3)] + COEFFS.HEX10_RIGHT[elements.hex10.slice(3, 6)];
+  const dg35 = COEFFS.HEX35_LEFT[elements.hex35.slice(0, 3)] + COEFFS.HEX35_RIGHT[elements.hex35.slice(3, 6)];
+  const dgDisc = COEFFS.DISC_FIRST3[elements.disc.slice(0, 3)];
+  const dgExt10 = COEFFS.EXT10_2MER[elements.spacer.slice(-3, -1)];
+
+  const s = elements.spacer.length;
+  const dgSpacer = 0.1463 * s * s - 4.9113 * s + 41.119;
+
+  const hybrid = dnaRnaHybridEnergy(elements.itr);
+  const dgHybrid = hybrid[2];
+  const dgItr = COEFFS.NUMERICAL_COEFS.itr * (dgHybrid / COEFFS.NORM_ITR);
+
+  const half = Math.floor(elements.up.length / 2);
+  const proxUp = elements.up.slice(-half);
+  const distUp = elements.up.slice(0, half);
+  const widthDist = grooveWidth(distUp);
+  const widthProx = grooveWidth(proxUp);
+  const upRigidity = rigidity(elements.up + elements.hex35 + elements.spacer.slice(0, 14));
+
+  const dgUp =
+    COEFFS.NUMERICAL_COEFS.dist_up * (widthDist / COEFFS.NORM_DIST_UP) +
+    COEFFS.NUMERICAL_COEFS.prox_up * (widthProx / COEFFS.NORM_PROX_UP) +
+    COEFFS.NUMERICAL_COEFS.rigidity * (upRigidity / COEFFS.NORM_RIGIDITY);
+
+  const terms = {
+    hex10: dg10, hex35: dg35, discriminator: dgDisc, ext10: dgExt10,
+    spacer: dgSpacer, itr: dgItr, up: dgUp, intercept: COEFFS.INTERCEPT,
+  };
+  let total = 0;
+  for (const k in terms) total += terms[k];
+  return { terms, total };
+}
+function txRate(dgTotal, organism) {
+  const beta = organism === "ecoli" ? COEFFS.BETA_IN_VIVO : COEFFS.BETA_IN_VITRO;
+  return COEFFS.K * Math.exp(-beta * dgTotal);
+}
+
+// --- sequence utils ---
+function sanitizeDNA(seq) {
+  const up = seq.trim().toUpperCase().replace(/U/g, "T");
+  let out = "";
+  for (const ch of up) if (ch === "A" || ch === "C" || ch === "G" || ch === "T") out += ch;
+  return out;
+}
+const REVCOMP_MAP = { A: "T", C: "G", G: "C", T: "A" };
+function revcomp(seq) {
+  let out = "";
+  for (let i = seq.length - 1; i >= 0; i--) out += REVCOMP_MAP[seq[i]];
+  return out;
+}
+function flipSpan(span, length) {
+  return [length - span[1], length - span[0]];
+}
+
+// --- sigma70 scan (calculator.py) ---
+const UP_LENGTH = 24, UP_HEX35_GAP = 1, HEX35_LENGTH = 6, HEX10_LENGTH = 6, ITR_LENGTH = 20;
+const SPACER_LENGTHS = [15, 16, 17, 18, 19, 20];
+const DISC_LENGTHS = [6, 7, 8, 9, 10];
+
+function predictOneStrand(sequence, tssRange) {
+  const hits = new Map(); // tss -> hit
+  const seqLen = sequence.length;
+
+  for (let tss = tssRange[0]; tss < tssRange[1]; tss++) {
+    if (tss + ITR_LENGTH > seqLen) continue;
+    const itr = sequence.slice(tss, tss + ITR_LENGTH);
+    let best = null;
+
+    for (const discLength of DISC_LENGTHS) {
+      if (tss - discLength < 0) continue;
+      const disc = sequence.slice(tss - discLength, tss);
+      const discSpan = [tss - discLength, tss];
+
+      for (const spacerLength of SPACER_LENGTHS) {
+        const hex10End = tss - discLength;
+        const hex10Start = hex10End - HEX10_LENGTH;
+        const spacerEnd = hex10Start;
+        const spacerStart = spacerEnd - spacerLength;
+        const hex35End = spacerStart;
+        const hex35Start = hex35End - HEX35_LENGTH;
+        const upEnd = hex35Start - UP_HEX35_GAP;
+        const upStart = upEnd - UP_LENGTH;
+        if (upStart < 0) continue;
+
+        const hex10 = sequence.slice(hex10Start, hex10End);
+        const spacer = sequence.slice(spacerStart, spacerEnd);
+        const hex35 = sequence.slice(hex35Start, hex35End);
+        const up = sequence.slice(upStart, upEnd);
+
+        const scored = scoreElements({ up, hex35, spacer, hex10, disc, itr });
+        if (best !== null && scored.total >= best.dgTotal) continue;
+
+        best = {
+          tss: tss, strand: 1, dgTotal: scored.total, terms: scored.terms,
+          promoterSpan: [upStart, tss + ITR_LENGTH],
+          upSpan: [upStart, upEnd], hex35Span: [hex35Start, hex35End],
+          spacerSpan: [spacerStart, spacerEnd], hex10Span: [hex10Start, hex10End],
+          discSpan: discSpan, itrSpan: [tss, tss + ITR_LENGTH],
+          up: up, hex35: hex35, spacer: spacer, hex10: hex10, disc: disc, itr: itr,
+        };
+      }
+    }
+    if (best !== null) hits.set(tss, best);
+  }
+  return hits;
+}
+
+function predictPromoters(sequence, organism, tssRange) {
+  const clean = sanitizeDNA(sequence);
+  const seqLen = clean.length;
+  const range = tssRange || [0, seqLen];
+
+  const forward = predictOneStrand(clean, range);
+  for (const hit of forward.values()) hit.txRate = txRate(hit.dgTotal, organism);
+
+  const revSeq = revcomp(clean);
+  const revRange = [seqLen - range[1], seqLen - range[0]];
+  const reverseLocal = predictOneStrand(revSeq, revRange);
+
+  const reverse = new Map();
+  reverseLocal.forEach(function (hit, localTss) {
+    const fwdTss = seqLen - localTss;
+    const flipped = Object.assign({}, hit, {
+      tss: fwdTss, strand: -1,
+      promoterSpan: flipSpan(hit.promoterSpan, seqLen), upSpan: flipSpan(hit.upSpan, seqLen),
+      hex35Span: flipSpan(hit.hex35Span, seqLen), spacerSpan: flipSpan(hit.spacerSpan, seqLen),
+      hex10Span: flipSpan(hit.hex10Span, seqLen), discSpan: flipSpan(hit.discSpan, seqLen),
+      itrSpan: flipSpan(hit.itrSpan, seqLen),
+    });
+    flipped.txRate = txRate(flipped.dgTotal, organism);
+    reverse.set(fwdTss, flipped);
+  });
+
+  return { sequence: clean, organism: organism, forward: forward, reverse: reverse };
+}
+
+
+/* ======================= APP ======================= */
+
+const EXAMPLE_SEQUENCE =
+  "A".repeat(30) + "TTGACA" + "A".repeat(17) + "TATAAT" + "C".repeat(6) + "G".repeat(20) + "A".repeat(10);
+
+const CONDITIONS = {
+  ecoli: {
+    key: "ecoli", name: "Escherichia coli MG1655", meta: "in vivo · K = 42 · β = 1.636",
+    calibration: "calibrated",
+    notes: "The reference condition — every coefficient is the published, trained value here.",
+  },
+  in_vitro: {
+    key: "in_vitro", name: "In vitro", meta: "cell-free · K = 42 · β = 0.816",
+    calibration: "calibrated",
+    notes: "The model's other calibrated condition. The 343 categorical + numerical weights are shared with in vivo — only K/β differ.",
+  },
+};
+
+const state = {
+  organism: "ecoli",
+  selectedKey: null, // `${tss}:${strand}`
+};
+
+const el = {
+  sequence: document.getElementById("sequence"),
+  seqLen: document.getElementById("seqLen"),
+  seqWarn: document.getElementById("seqWarn"),
+  exampleBtn: document.getElementById("exampleBtn"),
+  conditionSelect: document.getElementById("conditionSelect"),
+  conditionSummary: document.getElementById("conditionSummary"),
+  conditionCaveat: document.getElementById("conditionCaveat"),
+  tauInput: document.getElementById("tauInput"),
+  candidateStrip: document.getElementById("candidateStrip"),
+  detailMount: document.getElementById("detailMount"),
+  otherMount: document.getElementById("otherMount"),
+};
+
+function fmtSigned(n, digits) {
+  digits = digits === undefined ? 2 : digits;
+  const s = n.toFixed(digits);
+  return (n >= 0 ? "+" : "") + s;
+}
+function fmtRate(r) {
+  if (r >= 1000) return r.toFixed(0);
+  if (r >= 10) return r.toFixed(1);
+  return r.toFixed(2);
+}
+function keyOf(h) {
+  return h.tss + ":" + h.strand;
+}
+
+/* ---- condition panel ---- */
+function populateConditionSelect() {
+  el.conditionSelect.innerHTML = Object.values(CONDITIONS)
+    .map(function (c) { return '<option value="' + c.key + '">' + c.name + "</option>"; })
+    .join("");
+  el.conditionSelect.value = state.organism;
+}
+function renderConditionSummary() {
+  const c = CONDITIONS[state.organism];
+  el.conditionSummary.innerHTML =
+    '<div class="row1"><span class="sci-name">' + c.name + '</span><span class="badge ' + c.calibration + '">' + c.calibration + "</span></div>" +
+    '<div class="row2"><span class="meta">' + c.meta + "</span></div>" +
+    '<div class="notes">' + c.notes + "</div>";
+}
+
+/* ---- free-energy term chart (diverging bars, same component as the RBSForge console) ---- */
+const TERM_ORDER = ["up", "hex35", "ext10", "spacer", "hex10", "discriminator", "itr", "intercept"];
+const TERM_LABEL = {
+  up: "UP element", hex35: "-35 hexamer", ext10: "ext10 (TGn)", spacer: "spacer",
+  hex10: "-10 hexamer", discriminator: "discriminator", itr: "ITR", intercept: "intercept",
+};
+const TERM_NOTE = {
+  up: "minor-groove width + DNA bending rigidity of the UP element",
+  hex35: "sigma70 region 4.2 contact",
+  ext10: "extended -10 / TGn motif, last 2 nt of the spacer",
+  spacer: "quadratic penalty on spacer length alone (0.1463s² − 4.9113s + 41.119)",
+  hex10: "sigma70 region 2.3/2.4 contact",
+  discriminator: "sigma70 region 1.2 contact -- only the first 3 nt are scored",
+  itr: "DNA:RNA hybrid (R-loop) strength of the initial transcribed region",
+  intercept: "model intercept",
+};
+function buildTermsChart(terms) {
+  const maxAbs = Math.max(2, ...TERM_ORDER.map(function (n) { return Math.abs(terms[n]); }));
+  let html = "";
+  TERM_ORDER.forEach(function (name) {
+    const v = terms[name];
+    const pct = Math.min(50, (Math.abs(v) / maxAbs) * 50);
+    const side = v < 0 ? "neg" : "pos";
+    const styleLeft = v < 0 ? "left:" + (50 - pct) + "%; width:" + pct + "%;" : "left:50%; width:" + pct + "%;";
+    html += '<div class="term-row">' +
+      '<span class="tname">' + TERM_LABEL[name] + "</span>" +
+      '<span class="diverge"><span class="zero" style="left:50%;"></span><span class="fill ' + side + '" style="' + styleLeft + '"></span></span>' +
+      '<span class="tval ' + side + '">' + fmtSigned(v) + "</span>" +
+      "</div>" +
+      '<div class="term-note">' + TERM_NOTE[name] + "</div>";
+  });
+  return html;
+}
+
+/* ---- element map (inline SVG schematic of UP..ITR along the promoter) ---- */
+const SEG_LEGEND = [
+  ["UP element", "var(--seg-up)"], ["-35", "var(--seg-35)"], ["spacer", "var(--seg-spacer)"],
+  ["-10", "var(--seg-10)"], ["discriminator", "var(--seg-disc)"], ["ITR", "var(--seg-itr)"],
+];
+function buildLegend() {
+  return SEG_LEGEND.map(function (pair) {
+    return '<span class="item"><span class="swatch" style="background:' + pair[1] + '"></span>' + pair[0] + "</span>";
+  }).join("");
+}
+
+function buildElementMapSVG(hit) {
+  const pxPerNt = 9;
+  const laneY = 26, laneH = 30, textY = 46, labelY = 18;
+  const segs = [
+    { len: hit.up.length, color: "var(--seg-up)", label: "UP (" + hit.up.length + " nt)" },
+    { len: UP_HEX35_GAP, color: null, label: "" },
+    { len: hit.hex35.length, color: "var(--seg-35)", label: "-35", seq: hit.hex35 },
+    { len: hit.spacer.length, color: "var(--seg-spacer)", label: "spacer (" + hit.spacer.length + " nt)", ext10: hit.spacer.slice(-3, -1) },
+    { len: hit.hex10.length, color: "var(--seg-10)", label: "-10", seq: hit.hex10 },
+    { len: hit.disc.length, color: "var(--seg-disc)", label: "disc (" + hit.disc.length + " nt)", seq3: hit.disc.slice(0, 3) },
+    { len: hit.itr.length, color: "var(--seg-itr)", label: "ITR (" + hit.itr.length + " nt)" },
+  ];
+
+  let x = 0, body = "";
+  segs.forEach(function (seg) {
+    const w = seg.len * pxPerNt;
+    if (seg.color) {
+      body += '<rect x="' + x + '" y="' + laneY + '" width="' + w + '" height="' + laneH + '" rx="4" fill="' + seg.color + '" opacity="0.85" stroke="var(--surface)" stroke-width="1.5"/>';
+    }
+    if (seg.seq) {
+      const charW = w / seg.seq.length;
+      for (let i = 0; i < seg.seq.length; i++) {
+        body += '<text x="' + (x + charW * i + charW / 2) + '" y="' + textY + '" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600" fill="var(--surface)">' + seg.seq[i] + "</text>";
+      }
+    }
+    if (seg.seq3) {
+      const charW = Math.min(13, w / seg.len);
+      for (let i = 0; i < seg.seq3.length; i++) {
+        body += '<text x="' + (x + charW * i + charW / 2) + '" y="' + textY + '" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" font-weight="600" fill="var(--surface)">' + seg.seq3[i] + "</text>";
+      }
+    }
+    if (seg.label) {
+      body += '<text x="' + (x + w / 2) + '" y="' + labelY + '" text-anchor="middle" font-size="9.5" font-family="IBM Plex Mono, monospace" letter-spacing="0.03em" fill="currentColor" opacity="0.6">' + seg.label + "</text>";
+    }
+    if (seg.ext10) {
+      const ext10W = Math.min(2 * pxPerNt, w);
+      const bx = x + w - ext10W;
+      body += '<rect x="' + bx + '" y="' + laneY + '" width="' + ext10W + '" height="' + laneH + '" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.7"/>';
+      body += '<text x="' + (bx + ext10W / 2) + '" y="' + (laneY + laneH + 14) + '" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="currentColor" opacity="0.65">ext10 &quot;' + seg.ext10 + '&quot;</text>';
+    }
+    x += w;
+  });
+  const width = x, height = 84;
+
+  const caption = "-35 \"" + hit.hex35 + "\", spacer " + hit.spacer.length + " nt (ext10 \"" + hit.spacer.slice(-3, -1) +
+    "\"), -10 \"" + hit.hex10 + "\", discriminator \"" + hit.disc + "\" (first 3 nt scored), ITR " + hit.itr.length +
+    " nt. UP element " + hit.up.length + " nt shown as a block, not letter-by-letter.";
+
+  return '<figure class="map-figure"><div class="map-scroll"><svg viewBox="0 0 ' + width + " " + height + '" width="' + width + '" height="' + height +
+    '" role="img" aria-label="' + caption.replace(/"/g, "&quot;") + '">' + body + "</svg></div>" +
+    '<figcaption>' + caption + "</figcaption></figure>";
+}
+
+/* ---- render candidate strip + detail + other-promoters list ---- */
+function renderResults(result) {
+  const all = [];
+  result.forward.forEach(function (h) { all.push(h); });
+  result.reverse.forEach(function (h) { all.push(h); });
+  all.sort(function (a, b) { return b.txRate - a.txRate; });
+
+  if (state.selectedKey === null || !all.find(function (h) { return keyOf(h) === state.selectedKey; })) {
+    state.selectedKey = all.length ? keyOf(all[0]) : null;
+  }
+
+  const maxTx = all.length ? all[0].txRate : 1;
+  el.candidateStrip.innerHTML = "";
+  all.slice(0, 60).forEach(function (h) {
+    const card = document.createElement("div");
+    card.className = "candidate" + (keyOf(h) === state.selectedKey ? " selected" : "");
+    const barPct = Math.max(3, (h.txRate / maxTx) * 100);
+    card.innerHTML =
+      '<div class="pos"><span>TSS ' + h.tss + '</span><span class="strand-chip">' + (h.strand === 1 ? "→ fwd" : "← rev") + "</span></div>" +
+      '<div class="tx mono">' + fmtRate(h.txRate) + "</div>" +
+      '<div class="dg mono">ΔG ' + fmtSigned(h.dgTotal) + "</div>" +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + barPct + '%"></div></div>';
+    card.addEventListener("click", function () { state.selectedKey = keyOf(h); renderResults(result); });
+    el.candidateStrip.appendChild(card);
+  });
+
+  if (!all.length) {
+    el.detailMount.innerHTML = '<div class="empty-state">No valid σ70 promoter state found anywhere in this sequence — it may be too short, or too close to one end for a full UP+gap+-35+spacer+-10+disc+ITR footprint to fit.</div>';
+    el.otherMount.innerHTML = "";
+    return;
+  }
+
+  const selected = all.find(function (h) { return keyOf(h) === state.selectedKey; }) || all[0];
+  el.detailMount.innerHTML =
+    '<div class="detail">' +
+      '<div class="detail-head">' +
+        '<div class="headline">' +
+          '<span class="rate tnum">' + fmtRate(selected.txRate) + "</span>" +
+          '<span class="rate-unit">Tx_rate, au — K·exp(−β·ΔG_total)</span>' +
+        "</div>" +
+        '<div class="loc-tag">TSS <b>' + selected.tss + "</b>, " + (selected.strand === 1 ? "forward" : "reverse") + " strand<br>promoter [" +
+          selected.promoterSpan[0] + ", " + selected.promoterSpan[1] + ")</div>" +
+      "</div>" +
+      '<div class="headline"><span class="dg-total">ΔG_total = <b>' + fmtSigned(selected.dgTotal) + "</b></span></div>" +
+      '<div><div class="section-label">Free-energy decomposition</div><div class="terms-chart">' + buildTermsChart(selected.terms) + "</div></div>" +
+      '<div><div class="section-label">Element map</div>' + buildElementMapSVG(selected) + '<div class="map-legend">' + buildLegend() + "</div></div>" +
+    "</div>";
+
+  const tauRaw = parseFloat(el.tauInput.value);
+  const tau = Number.isNaN(tauRaw) ? 0 : tauRaw;
+  const others = all.filter(function (h) { return keyOf(h) !== keyOf(selected) && h.txRate > tau; });
+  if (others.length) {
+    const shown = others.slice(0, 15);
+    el.otherMount.innerHTML = '<div class="other-list">' +
+      '<div class="lede">' + others.length + " other promoter" + (others.length === 1 ? "" : "s") + " found above Tx_rate " + tau +
+        " — candidate cryptic/internal sites relative to the selected one (spec section 10.3):</div>" +
+      '<div class="chips">' +
+      shown.map(function (h) {
+        return '<span class="lchip mono" data-key="' + keyOf(h) + '">TSS ' + h.tss + " " + (h.strand === 1 ? "→" : "←") + " " + fmtRate(h.txRate) + "</span>";
+      }).join("") +
+      (others.length > shown.length ? '<span class="lchip mono">+' + (others.length - shown.length) + " more</span>" : "") +
+      "</div></div>";
+    el.otherMount.querySelectorAll(".lchip[data-key]").forEach(function (chip) {
+      chip.addEventListener("click", function () { state.selectedKey = chip.dataset.key; renderResults(result); });
+    });
+  } else {
+    el.otherMount.innerHTML = "";
+  }
+}
+
+/* ---- main recompute ---- */
+const MIN_PROMOTER_LEN = UP_LENGTH + UP_HEX35_GAP + HEX35_LENGTH + SPACER_LENGTHS[0] + HEX10_LENGTH + DISC_LENGTHS[0] + ITR_LENGTH;
+
+function recompute() {
+  const raw = el.sequence.value;
+  const clean = sanitizeDNA(raw);
+  el.seqLen.textContent = clean.length + " nt";
+  const stripped = raw.replace(/\s|\d/g, "");
+  el.seqWarn.textContent = stripped.length !== clean.length ? "non-ACGT characters ignored" : "";
+
+  if (clean.length < MIN_PROMOTER_LEN) {
+    el.candidateStrip.innerHTML = "";
+    el.detailMount.innerHTML = '<div class="empty-state">Enter at least ' + MIN_PROMOTER_LEN +
+      " nt — the minimum σ70 footprint (24 UP + 1 gap + 6 -35 + 15 spacer + 6 -10 + 6 discriminator + 20 ITR) — to see live predictions.</div>";
+    el.otherMount.innerHTML = "";
+    return;
+  }
+
+  const result = predictPromoters(clean, state.organism);
+  renderResults(result);
+}
+
+let debounceTimer = null;
+function scheduleRecompute() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(recompute, 150);
+}
+
+/* ---- wire up ---- */
+el.sequence.value = EXAMPLE_SEQUENCE;
+el.exampleBtn.addEventListener("click", function () { el.sequence.value = EXAMPLE_SEQUENCE; recompute(); });
+el.sequence.addEventListener("input", scheduleRecompute);
+
+el.conditionSelect.addEventListener("change", function () {
+  state.organism = el.conditionSelect.value;
+  renderConditionSummary();
+  recompute();
+});
+el.tauInput.addEventListener("input", function () { recompute(); });
+
+el.conditionCaveat.innerHTML = 'Only these two conditions are calibrated — this model was trained end-to-end on raw DNA sequence, not composed from separately-measured physical terms, so there is no principled "prior" transfer to a third organism the way RBSForge documents for non-<em>E. coli</em> HostPacks. See <span class="mono">operon/promoter_calculator/docs/MODEL.md</span>.';
+
+populateConditionSelect();
+renderConditionSummary();
+recompute();
+</script>
